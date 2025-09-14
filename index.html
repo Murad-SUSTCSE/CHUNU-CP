@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body class="bg-body text-body">
+<div class="noise-layer"></div>
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary px-3">
   <a class="navbar-brand" href="#" id="appTitle">CP Tracker</a>
   <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -35,8 +36,8 @@
       <input type="color" id="accentColorPicker" title="Accent color" class="form-control form-control-color form-control-sm" value="#2563eb" />
     </div>
     <div class="btn-group" role="group">
-      <button class="btn btn-outline-light btn-sm" id="exportDataBtn">Export</button>
-      <label class="btn btn-outline-light btn-sm mb-0" for="importDataInput">Import</label>
+  <button class="btn btn-outline-light btn-sm glow-hover" id="exportDataBtn">Export</button>
+  <label class="btn btn-outline-light btn-sm mb-0 glow-hover" for="importDataInput">Import</label>
       <input type="file" id="importDataInput" accept="application/json" hidden />
     </div>
   </div>
@@ -56,7 +57,7 @@
             <h5 class="card-title">Overall Progress</h5>
             <p class="small text-muted" id="overallSummary">Loading...</p>
             <canvas id="progressDonut" height="140" aria-label="Progress chart" role="img"></canvas>
-            <button class="btn btn-sm btn-outline-primary mt-2" id="openAnalyticsBtn">Analytics</button>
+            <button class="btn btn-sm btn-outline-primary mt-2 glow-hover" id="openAnalyticsBtn">Analytics</button>
           </div>
         </div>
       </div>
@@ -65,7 +66,7 @@
           <div class="card-body">
             <h5 class="card-title">Rating Problems</h5>
             <p id="dashRatingCounts" class="mb-2 small text-muted">--</p>
-            <button class="btn btn-sm btn-primary" data-section-jump="next-month" data-tab="rating">Add</button>
+            <button class="btn btn-sm btn-primary glow-hover" data-section-jump="next-month" data-tab="rating">Add</button>
           </div>
         </div>
       </div>
@@ -74,7 +75,7 @@
           <div class="card-body">
             <h5 class="card-title">Topic Problems</h5>
             <p id="dashTopicCounts" class="mb-2 small text-muted">--</p>
-            <button class="btn btn-sm btn-primary" data-section-jump="next-month" data-tab="topic">Add</button>
+            <button class="btn btn-sm btn-primary glow-hover" data-section-jump="next-month" data-tab="topic">Add</button>
           </div>
         </div>
       </div>
@@ -83,7 +84,7 @@
           <div class="card-body">
             <h5 class="card-title">4 Week Topics</h5>
             <p id="dash4WeekCounts" class="mb-2 small text-muted">--</p>
-            <button class="btn btn-sm btn-primary" data-section-jump="topics-4-weeks">Add</button>
+            <button class="btn btn-sm btn-primary glow-hover" data-section-jump="topics-4-weeks">Add</button>
           </div>
         </div>
       </div>
@@ -92,7 +93,7 @@
           <div class="card-body">
             <h5 class="card-title">Upsolve</h5>
             <p id="dashUpsolveCounts" class="mb-2 small text-muted">--</p>
-            <button class="btn btn-sm btn-primary" data-section-jump="upsolve">Add</button>
+            <button class="btn btn-sm btn-primary glow-hover" data-section-jump="upsolve">Add</button>
           </div>
         </div>
       </div>
@@ -113,7 +114,7 @@
       <div class="tab-pane fade show active" id="ratingPane" role="tabpanel">
         <div class="d-flex justify-content-between mb-2">
           <div>
-            <button class="btn btn-sm btn-success" id="addRatingProblemBtn">Add Problem</button>
+            <button class="btn btn-sm btn-success glow-hover" id="addRatingProblemBtn">Add Problem</button>
           </div>
           <div class="d-flex gap-2">
             <select id="ratingFilter" class="form-select form-select-sm" style="width:auto;">
@@ -127,7 +128,7 @@
       </div>
       <div class="tab-pane fade" id="topicPane" role="tabpanel">
         <div class="d-flex justify-content-between mb-2">
-          <button class="btn btn-sm btn-success" id="addTopicProblemBtn">Add Topic Problem</button>
+          <button class="btn btn-sm btn-success glow-hover" id="addTopicProblemBtn">Add Topic Problem</button>
           <select id="topicFilter" class="form-select form-select-sm" style="width:auto;">
             <option value="all">All</option>
             <option value="unsolved">Unsolved</option>
@@ -142,7 +143,7 @@
   <!-- 4 Week Topics -->
   <section id="section-topics-4-weeks" class="app-section d-none">
     <div class="d-flex justify-content-between mb-2">
-      <button class="btn btn-sm btn-success" id="add4WeekTopicBtn">Add Topic</button>
+  <button class="btn btn-sm btn-success glow-hover" id="add4WeekTopicBtn">Add Topic</button>
     </div>
     <div id="topics4WeeksContainer" class="list-group"></div>
   </section>
@@ -150,7 +151,7 @@
   <!-- Upsolve -->
   <section id="section-upsolve" class="app-section d-none">
     <div class="d-flex justify-content-between mb-2">
-      <button class="btn btn-sm btn-success" id="addUpsolveBtn">Add Upsolve</button>
+  <button class="btn btn-sm btn-success glow-hover" id="addUpsolveBtn">Add Upsolve</button>
       <select id="upsolveFilter" class="form-select form-select-sm" style="width:auto;">
         <option value="all">All</option>
         <option value="unsolved">Pending</option>
