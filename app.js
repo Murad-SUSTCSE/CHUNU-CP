@@ -763,6 +763,58 @@
 
   function renderAll(){ refreshStats(); renderRatingProblems(); renderTopicProblems(); render4WeekTopics(); renderUpsolve(); renderCalendar(); }
 
+  // Reveal animation observer
+  function initReveal(){
+    const observer = new IntersectionObserver((entries)=>{
+      entries.forEach(ent=>{
+        if(ent.isIntersecting){
+          ent.target.classList.add('visible');
+          observer.unobserve(ent.target);
+        }
+      });
+    }, { threshold:0.15 });
+    document.querySelectorAll('.card, .list-group-item, .accordion-item, section h5, section h6').forEach((el,i)=>{
+      el.classList.add('reveal');
+      el.setAttribute('data-reveal-delay', (i%5).toString());
+      observer.observe(el);
+    });
+  }
+
+  // Background FX (lightweight particle/orb drift)
+  function initBgFx(){
+    if(document.getElementById('bgFxCanvas')) return;
+    const c = document.createElement('canvas');
+    c.id = 'bgFxCanvas';
+    document.body.appendChild(c);
+    const ctx = c.getContext('2d');
+    let w= c.width = window.innerWidth; let h = c.height = window.innerHeight;
+    window.addEventListener('resize', ()=>{ w = c.width = window.innerWidth; h = c.height = window.innerHeight; });
+    const dots = Array.from({length: 28}, (_,i)=>({
+      x: Math.random()*w,
+      y: Math.random()*h,
+      r: 1 + Math.random()*2.2,
+      a: Math.random()*Math.PI*2,
+      s: 0.12 + Math.random()*0.25,
+      hue: 210 + Math.random()*80
+    }));
+    function tick(){
+      ctx.clearRect(0,0,w,h);
+      for(const d of dots){
+        d.a += 0.002 + d.s*0.002;
+        d.x += Math.cos(d.a)*d.s;
+        d.y += Math.sin(d.a)*d.s;
+        if(d.x<-50) d.x=w+40; if(d.x>w+50) d.x=-40; if(d.y<-50) d.y=h+40; if(d.y>h+50) d.y=-40;
+        const grad = ctx.createRadialGradient(d.x,d.y,0,d.x,d.y,d.r*12);
+        grad.addColorStop(0, `hsla(${d.hue}, 90%, 65%, .55)`);
+        grad.addColorStop(1, 'hsla(210,70%,10%,0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath(); ctx.arc(d.x,d.y,d.r*12,0,Math.PI*2); ctx.fill();
+      }
+      requestAnimationFrame(tick);
+    }
+    tick();
+  }
+
   // Init
   loadTheme();
   loadAccent();
@@ -782,5 +834,7 @@
   setTimeout(()=>{
     document.querySelectorAll('.skeleton').forEach(s=> s.remove());
     renderAll();
+    initReveal();
+    initBgFx();
   }, 150);
 })();
