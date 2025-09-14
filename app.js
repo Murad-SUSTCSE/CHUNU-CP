@@ -2,6 +2,7 @@
 (function(){
   const STORAGE_KEY = 'cpTrackerDataV1';
   const THEME_KEY = 'cpTrackerTheme';
+  const ACCENT_KEY = 'cpTrackerAccent';
 
   const defaultData = { nextMonthRating: [], nextMonthTopic: [], topics4Weeks: [], upsolve: [] };
   let state = loadState();
@@ -28,13 +29,38 @@
     document.documentElement.setAttribute('data-theme', next);
     localStorage.setItem(THEME_KEY, next);
   }
+  function loadAccent(){
+    const saved = localStorage.getItem(ACCENT_KEY);
+    if(saved){
+      applyAccent(saved);
+      const picker = byId('accentColorPicker'); if(picker) picker.value = saved;
+    }
+  }
+  function applyAccent(hex){
+    // Convert hex to rgb
+    const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    if(!m) return;
+    const r = parseInt(m[1],16), g=parseInt(m[2],16), b=parseInt(m[3],16);
+    const root = document.documentElement;
+    root.style.setProperty('--accent', hex);
+    root.style.setProperty('--accent-rgb', `${r},${g},${b}`);
+    root.style.setProperty('--gradient-accent', `linear-gradient(135deg, ${hex}, ${shadeColor(hex,-15)})`);
+  }
+  function shadeColor(hex, percent){
+    const num = parseInt(hex.slice(1),16);
+    const r = (num>>16) + percent;
+    const g = ((num>>8)&0x00FF) + percent;
+    const b = (num&0x0000FF) + percent;
+    return `#${(0x1000000 + (clamp(r)<<16) + (clamp(g)<<8) + clamp(b)).toString(16).slice(1)}`;
+  }
+  function clamp(v){ return Math.max(0, Math.min(255,v)); }
 
   // Utility
   const uid = () => Math.random().toString(36).slice(2,11);
   const byId = id => document.getElementById(id);
 
   // Section navigation
-  function showSection(key){
+  function showSection(key, skipHash){
     document.querySelectorAll('.app-section').forEach(s=>s.classList.add('d-none'));
     const target = byId('section-' + key);
     if(target){ target.classList.remove('d-none'); }
@@ -43,7 +69,20 @@
     if(key === 'topics-4-weeks') render4WeekTopics();
     if(key === 'upsolve') renderUpsolve();
     if(key === 'calendar') renderCalendar();
+    if(!skipHash) {
+      const current = location.hash.replace('#','');
+      if(current !== key) history.pushState({section:key}, '', '#'+key);
+      highlightActiveNav(key);
+    }
   }
+  function highlightActiveNav(key){
+    document.querySelectorAll('.nav-link[data-section]').forEach(n=> n.classList.toggle('active', n.getAttribute('data-section')===key));
+  }
+  window.addEventListener('popstate', (e)=>{
+    const sec = (location.hash||'').replace('#','') || 'dashboard';
+    showSection(sec, true);
+    highlightActiveNav(sec);
+  });
 
   // Stats
   function refreshStats(){
@@ -504,7 +543,8 @@
         if(it.type==='fourweek') cls = 'fourweek';
         else if(it.type==='upsolve-contest') cls = 'upsolve-contest';
         else if(it.type==='upsolve-problem') cls = 'upsolve-problem';
-        return `<span class='calendar-item ${cls}' data-cal-type='${it.type}' data-id='${it.id}'>${escapeHtml(it.label.slice(0,10))}</span>`;
+        const full = escapeHtml(it.label);
+        return `<span class='calendar-item ${cls}' data-cal-type='${it.type}' data-id='${it.id}' title='${full}' aria-label='${full}'>${escapeHtml(it.label.slice(0,10))}</span>`;
       }).join('');
       cells.push(`<div class='day'><div class='date'>${d}</div>${content}</div>`);
     }
@@ -645,11 +685,7 @@
   // Event Delegation
   document.addEventListener('click', (e)=>{
     const a = e.target.closest('[data-section]');
-    if(a){
-      document.querySelectorAll('.nav-link[data-section]').forEach(n=> n.classList.remove('active'));
-      a.classList.add('active');
-      showSection(a.getAttribute('data-section'));
-    }
+    if(a){ showSection(a.getAttribute('data-section')); }
     const jump = e.target.closest('[data-section-jump]');
     if(jump){
       const key = jump.getAttribute('data-section-jump');
@@ -702,6 +738,12 @@
   byId('addTopicProblemBtn').addEventListener('click', ()=> addOrEditTopicProblem());
   byId('add4WeekTopicBtn').addEventListener('click', ()=> open4WeekTopicModal());
   byId('addUpsolveBtn').addEventListener('click', ()=> openUpsolveModal());
+  const accentPicker = byId('accentColorPicker');
+  if(accentPicker){
+    accentPicker.addEventListener('input', (e)=>{
+      const val = e.target.value; localStorage.setItem(ACCENT_KEY, val); applyAccent(val); drawDonut(0,0,0); refreshStats();
+    });
+  }
   byId('openAnalyticsBtn').addEventListener('click', openAnalytics);
   byId('globalSearch').addEventListener('input', (e)=> globalSearch(e.target.value));
   byId('exportDataBtn').addEventListener('click', ()=>{
@@ -723,6 +765,22 @@
 
   // Init
   loadTheme();
-  showSection('dashboard');
-  renderAll();
+  loadAccent();
+  // Insert skeletons (simple approach) then replace on first render
+  const dash = byId('dashboardCards');
+  if(dash){
+    dash.querySelectorAll('.card').forEach(c=>{
+      c.querySelector('.card-body')?.insertAdjacentHTML('beforeend', `<div class='mt-2 skeleton'>
+        <div class='skeleton-line wide'></div>
+        <div class='skeleton-line mid'></div>
+        <div class='skeleton-line small'></div>
+      </div>`);
+    });
+  }
+  const initial = (location.hash||'').replace('#','') || 'dashboard';
+  showSection(initial, true);
+  setTimeout(()=>{
+    document.querySelectorAll('.skeleton').forEach(s=> s.remove());
+    renderAll();
+  }, 150);
 })();
