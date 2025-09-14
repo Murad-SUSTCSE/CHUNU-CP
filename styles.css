@@ -1,0 +1,65 @@
+/* Base Theme Variables */
+:root {
+  --bg: #ffffff;
+  --bg-alt: #f5f7fa;
+  --text: #1b1f24;
+  --border: #d0d7de;
+  --accent: #0d6efd;
+  --accent-rgb: 13,110,253;
+  --danger: #dc3545;
+  --warning: #ffc107;
+  --success: #198754;
+  --radius: 8px;
+}
+
+[data-theme="dark"] {
+  --bg: #0d1117;
+  --bg-alt: #161b22;
+  --text: #e6edf3;
+  --border: #30363d;
+  --accent: #4493f8;
+  --accent-rgb: 68,147,248;
+  --danger: #f6757a;
+  --warning: #ffcd45;
+  --success: #3fbf7f;
+}
+
+body.bg-body { background: var(--bg); color: var(--text); }
+.bg-alt { background: var(--bg-alt); }
+.text-body { color: var(--text); }
+.border-theme { border-color: var(--border) !important; }
+
+.card { background: var(--bg-alt); border-color: var(--border); }
+.navbar, .nav-tabs .nav-link.active { box-shadow: 0 2px 4px rgba(0,0,0,.1); }
+
+.app-section { animation: fade .2s ease-in; }
+@keyframes fade { from { opacity:0 } to { opacity:1 } }
+
+.calendar-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
+.calendar-grid .day { border:1px solid var(--border); min-height:90px; padding:4px; position:relative; border-radius:var(--radius); background:var(--bg-alt); font-size:.75rem; }
+.calendar-grid .day .date { font-weight:600; font-size:.7rem; opacity:.7; }
+.calendar-item { display:block; padding:2px 4px; margin:2px 0; border-radius:4px; font-size:.65rem; line-height:1.1; color:#fff; cursor:pointer; text-decoration:none; }
+.calendar-item.rating { background:rgba(var(--accent-rgb), .85); }
+.calendar-item.topic { background:var(--success); }
+.calendar-item.fourweek { background:var(--warning); color:#000; }
+.calendar-item.upsolve-contest { background: var(--danger); }
+.calendar-item.upsolve-problem { background: var(--accent); }
+
+.badge-solved { background: var(--success); }
+.badge-unsolved { background: var(--danger); }
+.badge-pending { background: var(--warning); color:#000; }
+
+.accordion-button { background: var(--bg-alt); color: var(--text); }
+.accordion-item { background: var(--bg-alt); }
+
+.list-group-item { background: var(--bg-alt); color: var(--text); }
+
+.search-highlight { background: rgba(var(--accent-rgb), .25); padding:2px 4px; border-radius:4px; }
+
+.placeholder-empty { opacity:.6; font-style:italic; }
+
+/* Responsive tweaks */
+@media (max-width: 768px) {
+  .calendar-grid .day { min-height:70px; }
+  #progressDonut { width:100% !important; }
+}
