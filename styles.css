@@ -1,10 +1,10 @@
 /* Single Dark Blue Theme (no light mode) */
 :root {
-  --bg: #07111d;
-  --bg-alt: #0f1c2b;
-  --bg-soft: #16283a;
-  --text: #f2f6fc;
-  --text-muted: #8fa5bc;
+  --bg: #060d17;
+  --bg-alt: #102235;
+  --bg-soft: #173145;
+  --text: #ffffff;
+  --text-muted: #9fbbd3;
   --border: #1f3448;
   --accent: #4f8dff;
   --accent-rgb: 79,141,255;
@@ -184,3 +184,23 @@ button, .btn { border-radius: calc(var(--radius) - 4px) !important; }
 .mini-toc a.active{color:var(--text);background:linear-gradient(135deg,rgba(var(--accent-rgb),.35),rgba(var(--accent-rgb),.12));box-shadow:0 0 0 1px rgba(var(--accent-rgb),.3) inset;}
 .mini-toc a.active::before{background:var(--accent);transform:translateY(-50%) scale(1.8);opacity:1;}
 @media (max-width:1000px){ .mini-toc {display:none;} }
+
+/* High contrast mode */
+.app-centered { max-width:1250px; margin:0 auto; }
+.app-centered > .app-section { margin-left:auto; margin-right:auto; }
+.app-section > h5, .app-section > h4, .app-section > h3 { text-align:center; }
+.dashboard-bento { margin-left:auto; margin-right:auto; }
+.high-contrast {
+  --bg: #04101d;
+  --bg-alt: #071a29;
+  --bg-soft: #0d2434;
+  --text: #ffffff;
+  --text-muted: #b9cee2;
+  --border: #2c4b63;
+  --accent: #61b4ff;
+  --accent-rgb: 97,180,255;
+  --accent-soft: rgba(var(--accent-rgb), .25);
+  --gradient-accent: linear-gradient(135deg,#3294ff,#9a5bff);
+}
+.high-contrast .card, .high-contrast .accordion-item, .high-contrast .list-group-item { border-color: rgba(255,255,255,.12) !important; }
+.high-contrast .mini-toc { background:linear-gradient(160deg,rgba(15,40,60,.95),rgba(10,30,50,.9)); }

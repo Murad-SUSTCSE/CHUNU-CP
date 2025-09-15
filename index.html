@@ -21,6 +21,9 @@
     <div class="search-wrap">
       <input id="globalSearch" type="search" placeholder="Search..." aria-label="Search" />
     </div>
+    <div class="form-check form-switch mb-0" title="High contrast mode">
+      <input class="form-check-input" type="checkbox" id="highContrastToggle" aria-label="Toggle high contrast" />
+    </div>
     <button id="openMenuBtn" class="btn btn-outline-light btn-sm glow-hover" aria-label="Open menu">Menu</button>
   </div>
 </header>
@@ -70,7 +73,7 @@
 </aside>
 <div id="menuBackdrop" class="menu-backdrop hidden" tabindex="-1" aria-hidden="true"></div>
 
-<main class="container-fluid py-3">
+<main class="container-fluid py-3 app-centered">
   <!-- Dashboard -->
   <section id="section-dashboard" class="app-section">
     <div class="mb-3 d-flex flex-wrap gap-2">
@@ -118,7 +121,7 @@
   </section>
 
   <!-- Next Month -->
-  <section id="section-next-month" class="app-section">
+  <section id="section-next-month" class="app-section d-none">
     <ul class="nav nav-tabs" id="nextMonthTabs" role="tablist">
       <li class="nav-item" role="presentation">
         <button class="nav-link active" id="rating-tab" data-bs-toggle="tab" data-bs-target="#ratingPane" type="button" role="tab">Rating-wise</button>
@@ -158,7 +161,7 @@
   </section>
 
   <!-- 4 Week Topics -->
-  <section id="section-topics-4-weeks" class="app-section">
+  <section id="section-topics-4-weeks" class="app-section d-none">
     <div class="d-flex justify-content-between mb-2">
   <button class="btn btn-sm btn-success glow-hover" id="add4WeekTopicBtn">Add Topic</button>
     </div>
@@ -166,7 +169,7 @@
   </section>
 
   <!-- Upsolve -->
-  <section id="section-upsolve" class="app-section">
+  <section id="section-upsolve" class="app-section d-none">
     <div class="d-flex justify-content-between mb-2">
   <button class="btn btn-sm btn-success glow-hover" id="addUpsolveBtn">Add Upsolve</button>
       <select id="upsolveFilter" class="form-select form-select-sm" style="width:auto;">
@@ -179,7 +182,7 @@
   </section>
 
   <!-- Calendar -->
-  <section id="section-calendar" class="app-section">
+  <section id="section-calendar" class="app-section d-none">
     <div id="calendarContainer" class="calendar-grid"></div>
     <div id="calendarLegend" class="mt-3 small"></div>
   </section>

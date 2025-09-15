@@ -20,16 +20,24 @@
   const uid = () => Math.random().toString(36).slice(2,11);
   const byId = id => document.getElementById(id);
 
-  // New layout: all sections visible; showSection kept for compatibility (scroll into view)
+  // Section toggling layout
   function showSection(key, skipHash){
+    document.querySelectorAll('.app-section').forEach(sec=>{
+      if(sec.id === 'section-'+key) sec.classList.remove('d-none');
+      else sec.classList.add('d-none');
+    });
     const target = byId('section-'+key);
-    if(target){ target.scrollIntoView({behavior:'smooth', block:'start'}); }
+    if(target) target.scrollTop = 0;
     if(key==='dashboard') refreshStats();
     if(key==='next-month'){ renderRatingProblems(); renderTopicProblems(); }
     if(key==='topics-4-weeks') render4WeekTopics();
     if(key==='upsolve') renderUpsolve();
     if(key==='calendar') renderCalendar();
     if(!skipHash){ const current = location.hash.replace('#',''); if(current!==key) history.pushState({section:key}, '', '#'+key); }
+    // Update mini TOC active state
+    document.querySelectorAll('#miniToc a[data-toc-target]').forEach(a=>{
+      a.classList.toggle('active', a.getAttribute('data-toc-target')==='section-'+key);
+    });
   }
   window.addEventListener('popstate', ()=>{ const sec=(location.hash||'').replace('#','')||'dashboard'; showSection(sec,true); });
 
@@ -661,6 +669,13 @@
   }
   byId('openAnalyticsBtn').addEventListener('click', openAnalytics);
   byId('globalSearch').addEventListener('input', (e)=> globalSearch(e.target.value));
+  const hcToggle = byId('highContrastToggle');
+  if(hcToggle){
+    hcToggle.addEventListener('change', ()=>{
+      document.body.classList.toggle('high-contrast', hcToggle.checked);
+      refreshStats();
+    });
+  }
   byId('exportDataBtn').addEventListener('click', ()=>{
     const blob = new Blob([JSON.stringify(state,null,2)], {type:'application/json'});
     const a = document.createElement('a');
