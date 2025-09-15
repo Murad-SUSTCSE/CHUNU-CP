@@ -81,7 +81,7 @@
       const solved = c.problems? c.problems.filter(x=>x.solved).length:0;
       return { name:c.name, platform:c.platform||'', solved, total, pct: total? Math.round(solved/total*100):0, status: c.solved };
     });
-    // 4-week topics progress
+  // Study topics progress (formerly 4-week)
     const fourWeek = state.topics4Weeks.map(t=> ({ topic:t.topic, status:t.status||'not started' }));
   return { ratingArray, topicArray, contestStats, fourWeek };
   }
@@ -98,8 +98,8 @@
         ${data.contestStats.length? tableHtml(['Contest','Platform','Solved','Total','%'], data.contestStats.map(c=> [escapeHtml(c.name), escapeHtml(c.platform), c.solved, c.total, c.pct+'%'])):'<div class="text-muted small">No contests.</div>'}
       </div>
       <div class='mb-2'>
-        <h6>4 Week Topics</h6>
-        ${data.fourWeek.length? tableHtml(['Topic','Status'], data.fourWeek.map(t=> [escapeHtml(t.topic), escapeHtml(t.status)])):'<div class="text-muted small">No 4-week topics.</div>'}
+        <h6>Study Topics</h6>
+        ${data.fourWeek.length? tableHtml(['Topic','Status'], data.fourWeek.map(t=> [escapeHtml(t.topic), escapeHtml(t.status)])):'<div class="text-muted small">No study topics.</div>'}
       </div>`;
     openModal('Analytics', body, ()=>{});
   }
@@ -212,7 +212,7 @@
   }
   function open4WeekTopicModal(existing){
     const resRows = (existing?.resources||[]).map((r,i)=> resourceRow(i,r.url,r.desc)).join('');
-    const m = openModal(existing? 'Edit Topic (4 Weeks)':'Add Topic (4 Weeks)', `
+  const m = openModal(existing? 'Edit Study Topic':'Add Study Topic', `
       <form id='topic4Form'>
         <div class='mb-2'>
           <label class='form-label'>Topic *</label>
@@ -826,29 +826,18 @@
     }
   }
   function buildAllProblemsRating(filter){
-    // combine rating problems and upsolve flattened problems list
-    const items = [];
-    state.nextMonthRating.forEach(p=> items.push({ type:'rating', id:p.id, name:p.name||'Untitled', link:p.link, rating:p.rating||'-', solved:p.solved }));
-    state.nextMonthTopic.forEach(p=> items.push({ type:'topic', id:p.id, name:p.name||'Untitled', link:p.link, rating:'-', solved:p.solved, topic:p.topic||'General' }));
-    state.upsolve.forEach(u=>{
-      if(u.kind==='problem') items.push({ type:'upsolve', id:u.id, name:u.name||'Untitled', link:u.link, rating:'-', solved:u.solved });
-      if(u.kind==='contest' && u.problems){
-        u.problems.forEach(ch=> items.push({ type:'contest-problem', parent:u.id, id:u.id+':'+(ch.link||ch.name), name: (u.name? u.name+': ':'') + (ch.name||'Problem'), link:ch.link, rating:'-', solved:ch.solved }));
-      }
-    });
-    const filtered = items.filter(p=> filter==='all' || (filter==='solved'?p.solved:!p.solved));
-    // group by rating (only rating problems have rating numeric)
+    const ratingItems = state.nextMonthRating
+      .filter(p=> filter==='all' || (filter==='solved'?p.solved:!p.solved))
+      .map(p=> ({ type:'rating', id:p.id, name:p.name||'Untitled', link:p.link, rating:p.rating||'-', solved:p.solved }));
+    if(!ratingItems.length) return '<div class="placeholder-empty p-3">No rating problems.</div>';
     const groups = {};
-    filtered.forEach(p=>{
+    ratingItems.forEach(p=>{
       let bucket = 'Unrated';
-      if(p.type==='rating'){
-        const r = parseInt(p.rating,10);
-        if(!isNaN(r)){
-          const start = Math.floor(r/200)*200; bucket = start+'-'+(start+200);
-        }
+      const r = parseInt(p.rating,10);
+      if(!isNaN(r)){
+        const start = Math.floor(r/200)*200; bucket = start+'-'+(start+200);
       }
-      groups[bucket] = groups[bucket] || [];
-      groups[bucket].push(p);
+      (groups[bucket] = groups[bucket] || []).push(p);
     });
     const ordered = Object.entries(groups).sort((a,b)=> a[0].localeCompare(b[0]));
     if(!ordered.length) return '<div class="placeholder-empty p-3">No problems.</div>';
@@ -875,23 +864,12 @@
     }).join('');
   }
   function buildAllProblemsTopic(filter){
-    // group by synthetic topic/platform (since original topic problems removed) -> use upsolve platform or label 'Rating List'
     const groups = {};
-    const push = (key,obj)=>{ groups[key]=groups[key]||[]; groups[key].push(obj); };
-  state.nextMonthRating.forEach(p=>{ if(filter==='all' || (filter==='solved'?p.solved:!p.solved)) push('Rating List', { id:p.id, type:'rating', name:p.name||'Untitled', link:p.link, solved:p.solved }); });
-  state.nextMonthTopic.forEach(p=>{ if(filter==='all' || (filter==='solved'?p.solved:!p.solved)) push(p.topic||'General', { id:p.id, type:'topic', name:p.name||'Untitled', link:p.link, solved:p.solved }); });
-    state.upsolve.forEach(u=>{
-      if(u.kind==='problem'){
-        if(filter==='all' || (filter==='solved'?u.solved:!u.solved)) push('Upsolve', { id:u.id, type:'upsolve', name:u.name||'Untitled', link:u.link, solved:u.solved });
-      } else if(u.kind==='contest') {
-        const key = u.platform? u.platform+' Contest': 'Contest';
-        if(u.problems && u.problems.length){
-          u.problems.forEach((ch,idx)=>{ if(filter==='all' || (filter==='solved'?ch.solved:!ch.solved)) push(key, { id:u.id+':'+idx, parent:u.id, type:'contest-problem', name:(u.name? u.name+': ':'')+(ch.name||'Problem'), link:ch.link, solved:ch.solved }); });
-        }
-      }
-    });
+    state.nextMonthTopic
+      .filter(p=> filter==='all' || (filter==='solved'?p.solved:!p.solved))
+      .forEach(p=> { const key=p.topic||'General'; (groups[key]=groups[key]||[]).push({ id:p.id, type:'topic', name:p.name||'Untitled', link:p.link, solved:p.solved }); });
     const ordered = Object.entries(groups).sort((a,b)=> a[0].localeCompare(b[0]));
-    if(!ordered.length) return '<div class="placeholder-empty p-3">No problems.</div>';
+    if(!ordered.length) return '<div class="placeholder-empty p-3">No topic problems.</div>';
     return ordered.map(([label, arr],i)=>{
       const rows = arr.map(p=> `<div class='d-flex justify-content-between align-items-center py-1'>
           <div class='flex-grow-1'>
@@ -900,7 +878,7 @@
             <span class='badge ${p.solved?'badge-solved':'badge-unsolved'}'>${p.solved?'Solved':'Todo'}</span>
           </div>
           <div class='btn-group btn-group-sm'>
-            ${p.type!=='contest-problem'? `<button class='btn btn-outline-danger' data-action='delete-ap-${p.type}' data-id='${p.id}'>Del</button>`:''}
+            <button class='btn btn-outline-danger' data-action='delete-ap-${p.type}' data-id='${p.id}'>Del</button>
           </div>
         </div>`).join('');
       return `<div class='accordion-item'>
@@ -954,6 +932,10 @@
     }
     ratingModeBtn?.addEventListener('click', ()=> applyProblemMode('rating'));
     topicModeBtn?.addEventListener('click', ()=> applyProblemMode('topic'));
+    // Explicit side menu link listeners (in case global delegation misses)
+    document.querySelectorAll('#sideMenu a.menu-link[data-section]').forEach(a=>{
+      a.addEventListener('click', (e)=>{ e.preventDefault(); const sec=a.getAttribute('data-section'); if(sec) showSection(sec); closeSideMenu?.(); });
+    });
   }, 150);
 })();
 
