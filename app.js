@@ -34,10 +34,6 @@
     if(key==='upsolve') renderUpsolve();
     if(key==='calendar') renderCalendar();
     if(!skipHash){ const current = location.hash.replace('#',''); if(current!==key) history.pushState({section:key}, '', '#'+key); }
-    // Update mini TOC active state
-    document.querySelectorAll('#miniToc a[data-toc-target]').forEach(a=>{
-      a.classList.toggle('active', a.getAttribute('data-toc-target')==='section-'+key);
-    });
   }
   window.addEventListener('popstate', ()=>{ const sec=(location.hash||'').replace('#','')||'dashboard'; showSection(sec,true); });
 
@@ -669,13 +665,7 @@
   }
   byId('openAnalyticsBtn').addEventListener('click', openAnalytics);
   byId('globalSearch').addEventListener('input', (e)=> globalSearch(e.target.value));
-  const hcToggle = byId('highContrastToggle');
-  if(hcToggle){
-    hcToggle.addEventListener('change', ()=>{
-      document.body.classList.toggle('high-contrast', hcToggle.checked);
-      refreshStats();
-    });
-  }
+  // High contrast toggle removed
   byId('exportDataBtn').addEventListener('click', ()=>{
     const blob = new Blob([JSON.stringify(state,null,2)], {type:'application/json'});
     const a = document.createElement('a');
