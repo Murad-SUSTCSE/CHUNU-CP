@@ -1,53 +1,23 @@
-/* Base Theme Variables */
-/* Refined color system (inspired by modern dashboard palettes) */
+/* Single Dark Blue Theme (no light mode) */
 :root {
-  --bg: #f8f9fb; /* page background */
-  --bg-alt: #ffffff; /* surface cards */
-  --bg-soft: #eef2f7; /* subtle blocks */
-  --text: #202632;
-  --text-muted: #5b6575;
-  --border: #d9e1eb;
-  --accent: #2563eb; /* primary indigo/blue */
-  --accent-rgb: 37,99,235;
-  --accent-soft: rgba(var(--accent-rgb), .08);
-  --danger: #e44747;
-  --warning: #f59e0b;
-  --success: #16a34a;
-  --info: #0ea5e9;
-  --radius: 10px;
-  --shadow-sm: 0 1px 2px rgba(0,0,0,.06),0 1px 3px rgba(0,0,0,.08);
-  --shadow-md: 0 4px 12px rgba(0,0,0,.08);
-  --gradient-accent: linear-gradient(135deg, #2563eb, #4f46e5);
+  --bg: #07111d;
+  --bg-alt: #0f1c2b;
+  --bg-soft: #16283a;
+  --text: #f2f6fc;
+  --text-muted: #8fa5bc;
+  --border: #1f3448;
+  --accent: #4f8dff;
+  --accent-rgb: 79,141,255;
+  --accent-soft: rgba(var(--accent-rgb), .22);
+  --danger: #ff6b6b;
+  --warning: #ffb74d;
+  --success: #31d691;
+  --info: #46c5ff;
+  --radius: 16px;
+  --shadow-sm: 0 2px 4px rgba(0,0,0,.5), 0 6px 14px -4px rgba(0,0,0,.55);
+  --shadow-md: 0 14px 38px -6px rgba(0,0,0,.65);
+  --gradient-accent: linear-gradient(135deg, #3d6dff, #7a4dff);
 }
-
-[data-theme="dark"] {
-  --bg: #05070c;
-  --bg-alt: #0f1520;
-  --bg-soft: #16202c;
-  --text: #f5f7fb;
-  --text-muted: #98a5b8;
-  --border: #243140;
-  --accent: #5b8dff;
-  --accent-rgb: 91,141,255;
-  --accent-soft: rgba(var(--accent-rgb), .18);
-  --danger: #ff7171;
-  --warning: #ffbe49;
-  --success: #3ddc91;
-  --info: #4fc3ff;
-  --shadow-sm: 0 2px 4px rgba(0,0,0,.55),0 3px 8px rgba(0,0,0,.45);
-  --shadow-md: 0 6px 20px rgba(0,0,0,.55);
-  --gradient-accent: linear-gradient(135deg, #3058ff, #8b5cf6);
-}
-
-/* Theming overrides to ensure dark mode consistent */
-[data-theme="dark"] .nav-tabs .nav-link { color: var(--text-muted); }
-[data-theme="dark"] .nav-tabs .nav-link.active { background: var(--accent-soft); color: var(--accent); }
-[data-theme="dark"] .accordion-button { background: var(--bg-alt); color: var(--text); }
-[data-theme="dark"] .accordion-button:not(.collapsed) { color: var(--accent); }
-[data-theme="dark"] .list-group-item { background: var(--bg-alt); color: var(--text); border-color: var(--border); }
-[data-theme="dark"] .modal-content { background: var(--bg-alt); }
-[data-theme="dark"] .form-control, [data-theme="dark"] .form-select { background: var(--bg-soft); color: var(--text); }
-[data-theme="dark"] .calendar-grid .day { background: var(--bg-alt); }
 
 body.bg-body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', Arial, sans-serif; position:relative; }
 body.bg-body::before { content:""; position:fixed; inset:0; z-index:-3; background:radial-gradient(circle at 15% 20%, rgba(var(--accent-rgb), .25), transparent 60%), radial-gradient(circle at 85% 70%, rgba(255,180,0,.18), transparent 55%); mix-blend-mode:screen; pointer-events:none; }
@@ -117,9 +87,14 @@ button, .btn { border-radius: calc(var(--radius) - 4px) !important; }
 
 .list-group-item { background: linear-gradient(155deg, var(--bg-alt), var(--bg-soft)); color: var(--text); border:1px solid rgba(255,255,255,.05); margin-bottom:6px; border-radius: var(--radius); }
 #progressDonut { width:100%; max-width:170px; filter:drop-shadow(0 4px 10px rgba(var(--accent-rgb), .35)); }
-[data-theme="dark"] .btn-primary, [data-theme="dark"] .btn-success { color:#fff; }
-[data-theme="dark"] .btn-outline-light { border-color: var(--accent); color: var(--accent); }
-[data-theme="dark"] .btn-outline-light:hover { background: var(--accent); color:#fff; }
+/* Bento dashboard layout */
+.dashboard-bento { display:grid; gap:18px; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); align-items:stretch; }
+.dashboard-bento .card { height:100%; }
+.dashboard-bento .card[data-wide='true'] { grid-column: span 2; }
+.dashboard-bento .card[data-tall='true'] { grid-row: span 2; }
+@media (min-width:1400px){ .dashboard-bento { grid-template-columns: repeat(6, 1fr); } }
+@media (max-width:600px){ .dashboard-bento { grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap:12px; } }
+/* Theme-specific button overrides removed (single theme) */
 
 /* Reveal Animations */
 .reveal { opacity:0; transform:translateY(18px) scale(.98); transition:opacity .8s ease, transform .8s cubic-bezier(.22,.61,.36,1); will-change:transform,opacity; }

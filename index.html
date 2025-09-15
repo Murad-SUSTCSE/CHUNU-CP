@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -28,10 +28,7 @@
     <form class="d-flex me-3" role="search" onsubmit="event.preventDefault();">
       <input id="globalSearch" class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
     </form>
-    <div class="form-check form-switch text-light me-3">
-      <input class="form-check-input" type="checkbox" role="switch" id="darkModeToggle">
-      <label class="form-check-label" for="darkModeToggle">Dark</label>
-    </div>
+    <!-- Dark mode toggle removed (single theme) -->
     <div class="d-flex align-items-center me-3">
       <input type="color" id="accentColorPicker" title="Accent color" class="form-control form-control-color form-control-sm" value="#2563eb" />
     </div>
@@ -50,9 +47,8 @@
       <button class="btn btn-outline-primary btn-sm" data-section-jump="topics-4-weeks">Go to 4 Week Topics</button>
       <button class="btn btn-outline-primary btn-sm" data-section-jump="upsolve">Go to Upsolve</button>
     </div>
-    <div class="row g-3" id="dashboardCards">
-      <div class="col-md-3 col-sm-6">
-        <div class="card shadow-sm h-100">
+    <div class="dashboard-bento" id="dashboardCards">
+      <div class="card shadow-sm" data-wide="true" data-tall="true">
           <div class="card-body">
             <h5 class="card-title">Overall Progress</h5>
             <p class="small text-muted" id="overallSummary">Loading...</p>
@@ -60,43 +56,34 @@
             <button class="btn btn-sm btn-outline-primary mt-2 glow-hover" id="openAnalyticsBtn">Analytics</button>
           </div>
         </div>
-      </div>
-      <div class="col-md-3 col-sm-6">
-        <div class="card shadow-sm h-100">
+      <div class="card shadow-sm" data-wide="true">
           <div class="card-body">
             <h5 class="card-title">Rating Problems</h5>
             <p id="dashRatingCounts" class="mb-2 small text-muted">--</p>
             <button class="btn btn-sm btn-primary glow-hover" data-section-jump="next-month" data-tab="rating">Add</button>
           </div>
         </div>
-      </div>
-      <div class="col-md-3 col-sm-6">
-        <div class="card shadow-sm h-100">
+      <div class="card shadow-sm">
           <div class="card-body">
             <h5 class="card-title">Topic Problems</h5>
             <p id="dashTopicCounts" class="mb-2 small text-muted">--</p>
             <button class="btn btn-sm btn-primary glow-hover" data-section-jump="next-month" data-tab="topic">Add</button>
           </div>
         </div>
-      </div>
-      <div class="col-md-3 col-sm-6">
-        <div class="card shadow-sm h-100">
+      <div class="card shadow-sm">
           <div class="card-body">
             <h5 class="card-title">4 Week Topics</h5>
             <p id="dash4WeekCounts" class="mb-2 small text-muted">--</p>
             <button class="btn btn-sm btn-primary glow-hover" data-section-jump="topics-4-weeks">Add</button>
           </div>
         </div>
-      </div>
-      <div class="col-md-3 col-sm-6">
-        <div class="card shadow-sm h-100">
+      <div class="card shadow-sm">
           <div class="card-body">
             <h5 class="card-title">Upsolve</h5>
             <p id="dashUpsolveCounts" class="mb-2 small text-muted">--</p>
             <button class="btn btn-sm btn-primary glow-hover" data-section-jump="upsolve">Add</button>
           </div>
         </div>
-      </div>
     </div>
   </section>
 

@@ -1,131 +1,33 @@
 /* CP Tracker App - Initial Scaffold */
 (function(){
   const STORAGE_KEY = 'cpTrackerDataV1';
-  const THEME_KEY = 'cpTrackerTheme';
   const ACCENT_KEY = 'cpTrackerAccent';
 
   const defaultData = { nextMonthRating: [], nextMonthTopic: [], topics4Weeks: [], upsolve: [] };
   let state = loadState();
 
   function loadState(){
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if(!raw) return JSON.parse(JSON.stringify(defaultData));
-      const parsed = JSON.parse(raw);
-      return { ...defaultData, ...parsed };
-    } catch(e){ console.warn('Failed loading state', e); return JSON.parse(JSON.stringify(defaultData)); }
+    try { const raw = localStorage.getItem(STORAGE_KEY); return raw? { ...defaultData, ...JSON.parse(raw)}: JSON.parse(JSON.stringify(defaultData)); } catch(e){ return JSON.parse(JSON.stringify(defaultData)); }
   }
   function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); refreshStats(); }
 
-  // Theme handling
-  function loadTheme(){
-    const t = localStorage.getItem(THEME_KEY) || 'light';
-    document.documentElement.setAttribute('data-theme', t);
-    document.getElementById('darkModeToggle').checked = t === 'dark';
-  }
-  function toggleTheme(){
-    const current = document.documentElement.getAttribute('data-theme');
-    const next = current === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem(THEME_KEY, next);
-  }
-  function loadAccent(){
-    const saved = localStorage.getItem(ACCENT_KEY);
-    if(saved){
-      applyAccent(saved);
-      const picker = byId('accentColorPicker'); if(picker) picker.value = saved;
-    }
-  }
-  function applyAccent(hex){
-    // Convert hex to rgb
-    const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    if(!m) return;
-    const r = parseInt(m[1],16), g=parseInt(m[2],16), b=parseInt(m[3],16);
-    const root = document.documentElement;
-    root.style.setProperty('--accent', hex);
-    root.style.setProperty('--accent-rgb', `${r},${g},${b}`);
-    root.style.setProperty('--gradient-accent', `linear-gradient(135deg, ${hex}, ${shadeColor(hex,-15)})`);
-  }
-  function shadeColor(hex, percent){
-    const num = parseInt(hex.slice(1),16);
-    const r = (num>>16) + percent;
-    const g = ((num>>8)&0x00FF) + percent;
-    const b = (num&0x0000FF) + percent;
-    return `#${(0x1000000 + (clamp(r)<<16) + (clamp(g)<<8) + clamp(b)).toString(16).slice(1)}`;
-  }
-  function clamp(v){ return Math.max(0, Math.min(255,v)); }
+  // Single theme init (no toggle)
+  function initTheme(){ document.documentElement.setAttribute('data-theme', 'dark'); }
 
-  // Utility
+  function loadAccent(){ const saved = localStorage.getItem(ACCENT_KEY); if(saved){ applyAccent(saved); const picker = byId('accentColorPicker'); if(picker) picker.value = saved; } }
+  function applyAccent(hex){ const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex); if(!m) return; const r=parseInt(m[1],16),g=parseInt(m[2],16),b=parseInt(m[3],16); const root=document.documentElement; root.style.setProperty('--accent', hex); root.style.setProperty('--accent-rgb', `${r},${g},${b}`); }
+
   const uid = () => Math.random().toString(36).slice(2,11);
   const byId = id => document.getElementById(id);
 
-  // Section navigation
-  function showSection(key, skipHash){
-    document.querySelectorAll('.app-section').forEach(s=>s.classList.add('d-none'));
-    const target = byId('section-' + key);
-    if(target){ target.classList.remove('d-none'); }
-    if(key === 'dashboard') refreshStats();
-    if(key === 'next-month') { renderRatingProblems(); renderTopicProblems(); }
-    if(key === 'topics-4-weeks') render4WeekTopics();
-    if(key === 'upsolve') renderUpsolve();
-    if(key === 'calendar') renderCalendar();
-    if(!skipHash) {
-      const current = location.hash.replace('#','');
-      if(current !== key) history.pushState({section:key}, '', '#'+key);
-      highlightActiveNav(key);
-    }
-  }
-  function highlightActiveNav(key){
-    document.querySelectorAll('.nav-link[data-section]').forEach(n=> n.classList.toggle('active', n.getAttribute('data-section')===key));
-  }
-  window.addEventListener('popstate', (e)=>{
-    const sec = (location.hash||'').replace('#','') || 'dashboard';
-    showSection(sec, true);
-    highlightActiveNav(sec);
-  });
+  function showSection(key, skipHash){ document.querySelectorAll('.app-section').forEach(s=>s.classList.add('d-none')); const target = byId('section-'+key); if(target) target.classList.remove('d-none'); if(key==='dashboard') refreshStats(); if(key==='next-month'){ renderRatingProblems(); renderTopicProblems(); } if(key==='topics-4-weeks') render4WeekTopics(); if(key==='upsolve') renderUpsolve(); if(key==='calendar') renderCalendar(); if(!skipHash){ const current = location.hash.replace('#',''); if(current!==key) history.pushState({section:key}, '', '#'+key); highlightActiveNav(key);} }
+  function highlightActiveNav(key){ document.querySelectorAll('.nav-link[data-section]').forEach(n=> n.classList.toggle('active', n.getAttribute('data-section')===key)); }
+  window.addEventListener('popstate', ()=>{ const sec=(location.hash||'').replace('#','')||'dashboard'; showSection(sec,true); highlightActiveNav(sec); });
 
-  // Stats
-  function refreshStats(){
-    const totalProblems = state.nextMonthRating.length + state.nextMonthTopic.length + state.upsolve.length;
-    const solvedRating = state.nextMonthRating.filter(p=>p.solved).length;
-    const solvedTopic = state.nextMonthTopic.filter(p=>p.solved).length;
-    const solvedUpsolve = state.upsolve.filter(p=>p.solved).length;
-    const solvedTotal = solvedRating + solvedTopic + solvedUpsolve;
-    const pct = totalProblems ? Math.round((solvedTotal/totalProblems)*100) : 0;
+  function refreshStats(){ const total= state.nextMonthRating.length + state.nextMonthTopic.length + state.upsolve.length; const sr= state.nextMonthRating.filter(p=>p.solved).length; const st= state.nextMonthTopic.filter(p=>p.solved).length; const su= state.upsolve.filter(p=>p.solved).length; const solved= sr+st+su; const pct = total? Math.round(solved/total*100):0; byId('overallSummary').textContent = `${solved}/${total} solved (${pct}%)`; byId('dashRatingCounts').textContent=`${sr}/${state.nextMonthRating.length} solved`; byId('dashTopicCounts').textContent=`${st}/${state.nextMonthTopic.length} solved`; byId('dashUpsolveCounts').textContent=`${su}/${state.upsolve.length} solved`; const topicsCompleted = state.topics4Weeks.filter(t=>t.status==='completed').length; byId('dash4WeekCounts').textContent = `${topicsCompleted}/${state.topics4Weeks.length} completed`; animateDonut(pct, solved, total); }
 
-    byId('overallSummary').textContent = `${solvedTotal}/${totalProblems} solved (${pct}%)`;
-    byId('dashRatingCounts').textContent = `${solvedRating}/${state.nextMonthRating.length} solved`;
-    byId('dashTopicCounts').textContent = `${solvedTopic}/${state.nextMonthTopic.length} solved`;
-    byId('dashUpsolveCounts').textContent = `${solvedUpsolve}/${state.upsolve.length} solved`;
-    const topicsCompleted = state.topics4Weeks.filter(t=>t.status==='completed').length;
-    byId('dash4WeekCounts').textContent = `${topicsCompleted}/${state.topics4Weeks.length} completed`;
-    drawDonut(pct, solvedTotal, totalProblems);
-  }
-
-  function drawDonut(pct, solved, total){
-    const canvas = byId('progressDonut'); if(!canvas) return;
-    const ctx = canvas.getContext('2d');
-    const w = canvas.width = canvas.clientWidth || 140;
-    const h = canvas.height = 140;
-    ctx.clearRect(0,0,w,h);
-    const cx = w/2, cy = h/2, r = Math.min(w,h)/2 - 10;
-    // background ring
-    ctx.lineWidth = 18;
-    ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--border') || '#ccc';
-    ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.stroke();
-    // progress arc
-    const end = (pct/100)*Math.PI*2 - Math.PI/2; // start at top
-    ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent') || '#0d6efd';
-    ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.arc(cx,cy,r,-Math.PI/2,end); ctx.stroke();
-    // text
-    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text') || '#000';
-    ctx.font = 'bold 18px system-ui, sans-serif';
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(pct+'%', cx, cy-4);
-    ctx.font = '12px system-ui, sans-serif';
-    ctx.fillText(`${solved}/${total}`, cx, cy+14);
-  }
+  // Animated donut
+  let donutAnimating=false; function animateDonut(targetPct, solved, total){ const canvas=byId('progressDonut'); if(!canvas) return; const ctx=canvas.getContext('2d'); const w = canvas.width = canvas.clientWidth || 140; const h = canvas.height = 140; const cx=w/2, cy=h/2, r=Math.min(w,h)/2-10; const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#0d6efd'; const border = getComputedStyle(document.documentElement).getPropertyValue('--border').trim()||'#334'; let start=null; const duration=900; donutAnimating=true; function frame(ts){ if(!start) start=ts; const t=(ts-start)/duration; const ease = t<1? (1- Math.pow(1-t,3)):1; const pct = Math.round(targetPct*ease); ctx.clearRect(0,0,w,h); ctx.lineWidth=18; ctx.strokeStyle=border; ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.stroke(); const end = (pct/100)*Math.PI*2 - Math.PI/2; ctx.strokeStyle=accent; ctx.lineCap='round'; ctx.beginPath(); ctx.arc(cx,cy,r,-Math.PI/2,end); ctx.stroke(); ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--text'); ctx.font='bold 18px system-ui,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(pct+'%', cx, cy-4); ctx.font='12px system-ui,sans-serif'; ctx.fillText(`${solved}/${total}`, cx, cy+14); if(ease<1) requestAnimationFrame(frame); else donutAnimating=false; } requestAnimationFrame(frame); }
 
   // Analytics
   function computeAnalytics(){
@@ -761,80 +663,103 @@
     reader.readAsText(file);
   });
 
+  // Command Palette
+  function initCommandPalette(){
+    if(document.getElementById('commandPalette')) return;
+    const paletteHtml = `<div id='commandPalette' class='cp-overlay hidden'>
+      <div class='cp-dialog'>
+        <input type='text' id='cpInput' class='cp-input' placeholder='Type a command or search...' autofocus />
+        <ul id='cpResults' class='cp-results'></ul>
+      </div>
+    </div>`;
+    document.body.insertAdjacentHTML('beforeend', paletteHtml);
+    const overlay = byId('commandPalette');
+    const input = byId('cpInput');
+    const results = byId('cpResults');
+    const actions = buildPaletteActions();
+    function open(){ overlay.classList.remove('hidden'); input.value=''; renderList(actions); input.focus(); document.body.classList.add('cp-open'); }
+    function close(){ overlay.classList.add('hidden'); document.body.classList.remove('cp-open'); }
+    function renderList(list){ results.innerHTML = list.map((a,i)=> `<li data-idx='${i}' tabindex='0'><span>${a.icon||''}</span><strong>${a.title}</strong><em>${a.desc||''}</em></li>`).join(''); }
+    function filter(v){ const q=v.toLowerCase(); renderList(actions.filter(a=> a.keywords.some(k=>k.includes(q)) || a.title.toLowerCase().includes(q))); }
+    input.addEventListener('input', ()=> filter(input.value));
+    results.addEventListener('click', e=>{ const li=e.target.closest('li'); if(!li) return; const idx = parseInt(li.getAttribute('data-idx'),10); const act = actions[idx]; if(act){ act.run(); close(); }});
+    document.addEventListener('keydown', e=>{ if(e.key==='Escape' && !overlay.classList.contains('hidden')) close(); if((e.metaKey||e.ctrlKey) && e.key.toLowerCase()==='k'){ e.preventDefault(); open(); } });
+  }
+  function buildPaletteActions(){
+    return [
+      { title:'Go: Dashboard', desc:'Show overall progress', keywords:['dash','home'], run:()=> showSection('dashboard'), icon:'🏠' },
+      { title:'Go: Rating Problems', desc:'Next Month rating tab', keywords:['rating','next'], run:()=>{ showSection('next-month'); new bootstrap.Tab(byId('rating-tab')).show(); }, icon:'📊' },
+      { title:'Go: Topic Problems', desc:'Next Month topic tab', keywords:['topic'], run:()=>{ showSection('next-month'); new bootstrap.Tab(byId('topic-tab')).show(); }, icon:'🧩' },
+      { title:'Go: 4 Week Topics', desc:'Study schedule', keywords:['4w','topics'], run:()=> showSection('topics-4-weeks'), icon:'🗂️' },
+      { title:'Go: Upsolve', desc:'Pending contest problems', keywords:['upsolve','contest'], run:()=> showSection('upsolve'), icon:'♻️' },
+      { title:'Go: Calendar', desc:'Activity calendar', keywords:['calendar','schedule'], run:()=> showSection('calendar'), icon:'🗓️' },
+      { title:'Add: Rating Problem', desc:'Quick add form', keywords:['add','rating'], run:()=> addOrEditRatingProblem(), icon:'➕' },
+      { title:'Add: Topic Problem', desc:'Quick add form', keywords:['add','topic'], run:()=> addOrEditTopicProblem(), icon:'➕' },
+      { title:'Add: 4 Week Topic', desc:'Plan study block', keywords:['add','4w'], run:()=> open4WeekTopicModal(), icon:'➕' },
+      { title:'Add: Upsolve Entry', desc:'Add problem or contest', keywords:['add','upsolve'], run:()=> openUpsolveModal(), icon:'➕' },
+      { title:'Open Analytics', desc:'View breakdown', keywords:['analytics','stats'], run:()=> openAnalytics(), icon:'📈' }
+    ];
+  }
+
+  // Parallax card hover
+  function initParallax(){
+    const maxTilt = 10; const cards = document.querySelectorAll('.card');
+    cards.forEach(card=>{
+      card.addEventListener('pointermove', e=>{
+        const r = card.getBoundingClientRect();
+        const x = ((e.clientX - r.left)/r.width - .5) * 2; // -1..1
+        const y = ((e.clientY - r.top)/r.height - .5) * 2;
+        card.style.transform = `rotateX(${(-y*maxTilt).toFixed(2)}deg) rotateY(${(x*maxTilt).toFixed(2)}deg) translateY(-2px)`;
+      });
+      card.addEventListener('pointerleave', ()=>{ card.style.transform='translateY(0)'; });
+    });
+  }
+
+  // Gradient heading utility
+  function applyGradientHeadings(){
+    document.querySelectorAll('h5.card-title, section > h5, section > h6').forEach(h=>{
+      h.classList.add('grad-text');
+    });
+  }
+
+  // Add supporting styles dynamically (palette overlay + command palette)
+  function injectDynamicStyles(){
+    if(document.getElementById('dynamicEnhanceStyles')) return;
+    const css = `
+    .grad-text { background:linear-gradient(90deg,var(--accent),#a07bff); -webkit-background-clip:text; color:transparent; }
+    .cp-overlay { position:fixed; inset:0; backdrop-filter:blur(14px) brightness(.7); background:rgba(5,12,20,.75); display:flex; align-items:flex-start; justify-content:center; padding:120px 20px 40px; z-index:1100; }
+    .cp-overlay.hidden { display:none; }
+    .cp-dialog { width:100%; max-width:680px; background:linear-gradient(145deg,var(--bg-alt), var(--bg-soft)); border:1px solid var(--border); border-radius:20px; box-shadow:0 18px 60px -10px rgba(0,0,0,.6); padding:18px 18px 10px; }
+    .cp-input { width:100%; background:var(--bg-soft); border:1px solid var(--border); padding:10px 14px; border-radius:12px; color:var(--text); font-size:15px; font-weight:500; outline:none; box-shadow:0 0 0 0 transparent; }
+    .cp-input:focus { border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-soft); }
+    .cp-results { list-style:none; margin:14px 0 4px; padding:0; max-height:340px; overflow:auto; }
+    .cp-results li { display:flex; gap:10px; align-items:center; padding:10px 12px; border-radius:12px; cursor:pointer; background:linear-gradient(145deg,rgba(255,255,255,.02),rgba(255,255,255,0)); border:1px solid rgba(255,255,255,.04); font-size:14px; }
+    .cp-results li + li { margin-top:6px; }
+    .cp-results li:hover, .cp-results li:focus { background:linear-gradient(145deg,var(--accent-soft),rgba(255,255,255,.04)); outline:none; }
+    .cp-results strong { flex:1; font-weight:600; color:var(--text); }
+    .cp-results em { font-style:normal; font-size:11px; letter-spacing:.5px; text-transform:uppercase; opacity:.6; }
+    body.cp-open { overflow:hidden; }
+    `;
+    const styleEl = document.createElement('style'); styleEl.id='dynamicEnhanceStyles'; styleEl.textContent = css; document.head.appendChild(styleEl);
+  }
+
   function renderAll(){ refreshStats(); renderRatingProblems(); renderTopicProblems(); render4WeekTopics(); renderUpsolve(); renderCalendar(); }
 
-  // Reveal animation observer
-  function initReveal(){
-    const observer = new IntersectionObserver((entries)=>{
-      entries.forEach(ent=>{
-        if(ent.isIntersecting){
-          ent.target.classList.add('visible');
-          observer.unobserve(ent.target);
-        }
-      });
-    }, { threshold:0.15 });
-    document.querySelectorAll('.card, .list-group-item, .accordion-item, section h5, section h6').forEach((el,i)=>{
-      el.classList.add('reveal');
-      el.setAttribute('data-reveal-delay', (i%5).toString());
-      observer.observe(el);
-    });
-  }
-
-  // Background FX (lightweight particle/orb drift)
-  function initBgFx(){
-    if(document.getElementById('bgFxCanvas')) return;
-    const c = document.createElement('canvas');
-    c.id = 'bgFxCanvas';
-    document.body.appendChild(c);
-    const ctx = c.getContext('2d');
-    let w= c.width = window.innerWidth; let h = c.height = window.innerHeight;
-    window.addEventListener('resize', ()=>{ w = c.width = window.innerWidth; h = c.height = window.innerHeight; });
-    const dots = Array.from({length: 28}, (_,i)=>({
-      x: Math.random()*w,
-      y: Math.random()*h,
-      r: 1 + Math.random()*2.2,
-      a: Math.random()*Math.PI*2,
-      s: 0.12 + Math.random()*0.25,
-      hue: 210 + Math.random()*80
-    }));
-    function tick(){
-      ctx.clearRect(0,0,w,h);
-      for(const d of dots){
-        d.a += 0.002 + d.s*0.002;
-        d.x += Math.cos(d.a)*d.s;
-        d.y += Math.sin(d.a)*d.s;
-        if(d.x<-50) d.x=w+40; if(d.x>w+50) d.x=-40; if(d.y<-50) d.y=h+40; if(d.y>h+50) d.y=-40;
-        const grad = ctx.createRadialGradient(d.x,d.y,0,d.x,d.y,d.r*12);
-        grad.addColorStop(0, `hsla(${d.hue}, 90%, 65%, .55)`);
-        grad.addColorStop(1, 'hsla(210,70%,10%,0)');
-        ctx.fillStyle = grad;
-        ctx.beginPath(); ctx.arc(d.x,d.y,d.r*12,0,Math.PI*2); ctx.fill();
-      }
-      requestAnimationFrame(tick);
-    }
-    tick();
-  }
-
-  // Init
-  loadTheme();
+  // Initial enhancements after existing content loaded
+  initTheme();
   loadAccent();
-  // Insert skeletons (simple approach) then replace on first render
-  const dash = byId('dashboardCards');
-  if(dash){
-    dash.querySelectorAll('.card').forEach(c=>{
-      c.querySelector('.card-body')?.insertAdjacentHTML('beforeend', `<div class='mt-2 skeleton'>
-        <div class='skeleton-line wide'></div>
-        <div class='skeleton-line mid'></div>
-        <div class='skeleton-line small'></div>
-      </div>`);
-    });
-  }
+  injectDynamicStyles();
+
   const initial = (location.hash||'').replace('#','') || 'dashboard';
   showSection(initial, true);
+
   setTimeout(()=>{
     document.querySelectorAll('.skeleton').forEach(s=> s.remove());
     renderAll();
     initReveal();
     initBgFx();
+    initParallax();
+    applyGradientHeadings();
+    initCommandPalette();
   }, 150);
 })();
