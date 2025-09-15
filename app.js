@@ -47,6 +47,7 @@
     const pct = total? Math.round(solved/total*100):0;
     byId('overallSummary').textContent = `${solved}/${total} solved (${pct}%)`;
     byId('dashRatingCounts').textContent=`${sr}/${state.nextMonthRating.length} solved`;
+  const dashTopic = byId('dashTopicCounts'); if(dashTopic) dashTopic.textContent = `${st}/${state.nextMonthTopic.length} solved`;
     const dashUps = byId('dashUpsolveCounts'); if(dashUps) dashUps.textContent=`${su}/${state.upsolve.length} solved`;
     const topicsCompleted = state.topics4Weeks.filter(t=>t.status==='completed').length;
     const dash4 = byId('dash4WeekCounts'); if(dash4) dash4.textContent = `${topicsCompleted}/${state.topics4Weeks.length} completed`;
@@ -957,7 +958,34 @@
     document.querySelectorAll('#sideMenu a.menu-link[data-section]').forEach(a=>{
       a.addEventListener('click', (e)=>{ e.preventDefault(); const sec=a.getAttribute('data-section'); if(sec) showSection(sec); closeSideMenu?.(); });
     });
+    initRain();
   }, 150);
+})();
+
+/* Rain animation outside main IIFE for clarity */
+(function(){
+  function initRain(){
+    const canvas = document.getElementById('rainCanvas'); if(!canvas) return; const ctx = canvas.getContext('2d');
+    function resize(){ canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    resize(); window.addEventListener('resize', resize);
+    const drops=[]; const COUNT = Math.min(240, Math.floor(window.innerWidth/5));
+    function make(){ return { x:Math.random()*canvas.width, y:Math.random()*canvas.height, len:8+Math.random()*16, sp:260+Math.random()*320, w:1+Math.random()*1.1, o:.15+Math.random()*.35 }; }
+    for(let i=0;i<COUNT;i++) drops.push(make());
+    let last=performance.now();
+    function frame(t){
+      const dt=(t-last)/1000; last=t; ctx.clearRect(0,0,canvas.width,canvas.height);
+      const accentRGB = getComputedStyle(document.documentElement).getPropertyValue('--accent-rgb') || '87,178,255';
+      for(const d of drops){
+        ctx.strokeStyle=`rgba(${accentRGB},${d.o})`; ctx.lineWidth=d.w; ctx.beginPath(); ctx.moveTo(d.x,d.y); ctx.lineTo(d.x,d.y-d.len); ctx.stroke();
+        d.y += d.sp*dt; d.x += 14*dt; // slight angle
+        if(d.y - d.len > canvas.height || d.x > canvas.width+30){ Object.assign(d, make(), { y:-20-Math.random()*200, x:Math.random()*canvas.width }); }
+      }
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+  // Try init early (if canvas exists already) and also export for main call
+  window.initRain = initRain;
 })();
 
 /* Side menu logic */

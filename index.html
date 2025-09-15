@@ -12,6 +12,7 @@
 </head>
 <body class="bg-body text-body">
 <div class="noise-layer"></div>
+<canvas id="rainCanvas"></canvas>
 <header class="app-header centered-header">
   <div class="brand-block text-center mx-auto">
     <h1 class="cf-handle" aria-label="Codeforces Handle">-CHUNU-</h1>
@@ -36,7 +37,6 @@
     <a href="#" data-section="upsolve" class="menu-link">Upsolve</a>
     <a href="#" data-section="calendar" class="menu-link">Calendar</a>
   <a href="#" data-section="all-problems" class="menu-link">All Problems</a>
-    <a href="#" data-section="search-results" class="menu-link">Search Results</a>
     </div>
     <p class="small text-muted mt-4">Press Ctrl + K for command palette</p>
   </div>
@@ -63,6 +63,7 @@
           <div class="card-body">
             <h5 class="card-title">New Problems</h5>
             <p id="dashRatingCounts" class="mb-2 small text-muted">--</p>
+            <p id="dashTopicCounts" class="mb-2 small text-muted">--</p>
             <button class="btn btn-sm btn-primary glow-hover" data-action="quick-add-rating">Add</button>
           </div>
         </div>
@@ -141,8 +142,8 @@
   <!-- All Problems -->
   <section id="section-all-problems" class="app-section d-none">
     <h5 class="text-center mb-3">All Problems</h5>
-    <div class="d-flex flex-wrap gap-2 justify-content-center mb-3">
-      <div class="btn-group" role="group" aria-label="View mode">
+    <div class="d-flex flex-wrap gap-2 justify-content-center mb-3 all-problems-toolbar">
+      <div class="d-flex gap-2 align-items-center" aria-label="View mode">
         <button class="btn btn-sm btn-outline-primary active" id="allProblemsRatingBtn" data-view="rating">Rating Wise</button>
         <button class="btn btn-sm btn-outline-primary" id="allProblemsTopicBtn" data-view="topic">Topic / Platform Wise</button>
       </div>

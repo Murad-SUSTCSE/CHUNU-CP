@@ -150,6 +150,13 @@ button, .btn { border-radius: calc(var(--radius) - 4px) !important; }
 
 .placeholder-empty { opacity:.65; font-style:italic; }
 
+/* All Problems toolbar spacing */
+.all-problems-toolbar button { margin:0 !important; }
+.all-problems-toolbar .btn + .btn { margin-left:.4rem !important; }
+
+/* Rain animation canvas */
+#rainCanvas { position:fixed; inset:0; width:100%; height:100%; pointer-events:none; z-index:-6; mix-blend-mode:screen; }
+
 /* Skeleton loading */
 .skeleton { position:relative; overflow:hidden; background: var(--bg-soft); border-radius:6px; }
 .skeleton::after { content:''; position:absolute; inset:0; background:linear-gradient(90deg, transparent, rgba(255,255,255,.4), transparent); animation: shimmer 1.2s infinite; }
