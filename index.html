@@ -46,12 +46,13 @@
     </div>
     <div class="menu-group links">
       <h6 class="menu-title">Sections</h6>
-      <a href="#section-dashboard" class="menu-link">Dashboard</a>
-  <a href="#section-next-month" class="menu-link">New Problems</a>
-  <a href="#section-topics-4-weeks" class="menu-link">Revision</a>
-      <a href="#section-upsolve" class="menu-link">Upsolve</a>
-      <a href="#section-calendar" class="menu-link">Calendar</a>
-      <a href="#section-search-results" class="menu-link">Search Results</a>
+    <a href="#" data-section="dashboard" class="menu-link">Dashboard</a>
+    <a href="#" data-section="next-month" class="menu-link">New Problems</a>
+  <a href="#" data-section="topics-4-weeks" class="menu-link">Topics</a>
+    <a href="#" data-section="upsolve" class="menu-link">Upsolve</a>
+    <a href="#" data-section="calendar" class="menu-link">Calendar</a>
+  <a href="#" data-section="all-problems" class="menu-link">All Problems</a>
+    <a href="#" data-section="search-results" class="menu-link">Search Results</a>
     </div>
     <p class="small text-muted mt-4">Press Ctrl + K for command palette</p>
   </div>
@@ -62,8 +63,8 @@
   <!-- Dashboard -->
   <section id="section-dashboard" class="app-section">
     <div class="mb-3 d-flex flex-wrap gap-2">
-      <button class="btn btn-outline-primary btn-sm" data-section-jump="topics-4-weeks">Go to 4 Week Topics</button>
-      <button class="btn btn-outline-primary btn-sm" data-section-jump="upsolve">Go to Upsolve</button>
+      <button class="btn btn-outline-primary btn-sm" data-section="topics-4-weeks">Go to Topics</button>
+      <button class="btn btn-outline-primary btn-sm" data-section="upsolve">Go to Upsolve</button>
     </div>
     <div class="dashboard-bento" id="dashboardCards">
       <div class="card shadow-sm" data-wide="true" data-tall="true">
@@ -83,7 +84,7 @@
         </div>
       <div class="card shadow-sm">
           <div class="card-body">
-            <h5 class="card-title">Revision</h5>
+            <h5 class="card-title">Topics</h5>
             <p id="dash4WeekCounts" class="mb-2 small text-muted">--</p>
             <button class="btn btn-sm btn-primary glow-hover" data-action="quick-add-revision">Add</button>
           </div>
@@ -101,19 +102,22 @@
   <!-- Next Month -->
   <section id="section-next-month" class="app-section d-none">
     <h5 class="text-center mb-3">New Problems</h5>
-    <div class="d-flex justify-content-between mb-2">
-      <div>
-        <button class="btn btn-sm btn-success glow-hover" id="addRatingProblemBtn">Add Problem</button>
+    <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between mb-2">
+      <div class="btn-group btn-group-sm" role="group" aria-label="Problem list mode">
+        <button class="btn btn-outline-primary active" id="modeRatingListBtn">Rating</button>
+        <button class="btn btn-outline-primary" id="modeTopicListBtn">Topic</button>
       </div>
-      <div class="d-flex gap-2">
+      <div class="d-flex gap-2 ms-auto">
         <select id="ratingFilter" class="form-select form-select-sm" style="width:auto;">
           <option value="all">All</option>
           <option value="unsolved">Unsolved</option>
           <option value="solved">Solved</option>
         </select>
+        <button class="btn btn-sm btn-success glow-hover" id="addProblemUnifiedBtn">Add Problem</button>
       </div>
     </div>
     <div id="ratingProblemsContainer" class="accordion"></div>
+    <div id="topicProblemsContainer" class="accordion d-none"></div>
   </section>
 
   <!-- 4 Week Topics -->
@@ -141,6 +145,23 @@
   <section id="section-calendar" class="app-section d-none">
     <div id="calendarContainer" class="calendar-grid"></div>
     <div id="calendarLegend" class="mt-3 small"></div>
+  </section>
+
+  <!-- All Problems -->
+  <section id="section-all-problems" class="app-section d-none">
+    <h5 class="text-center mb-3">All Problems</h5>
+    <div class="d-flex flex-wrap gap-2 justify-content-center mb-3">
+      <div class="btn-group" role="group" aria-label="View mode">
+        <button class="btn btn-sm btn-outline-primary active" id="allProblemsRatingBtn" data-view="rating">Rating Wise</button>
+        <button class="btn btn-sm btn-outline-primary" id="allProblemsTopicBtn" data-view="topic">Topic / Platform Wise</button>
+      </div>
+      <select id="allProblemsFilter" class="form-select form-select-sm" style="width:auto;">
+        <option value="all">All</option>
+        <option value="unsolved">Unsolved</option>
+        <option value="solved">Solved</option>
+      </select>
+    </div>
+    <div id="allProblemsContainer" class="accordion"></div>
   </section>
 
   <!-- Search Results -->

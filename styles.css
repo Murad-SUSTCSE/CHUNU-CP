@@ -207,3 +207,26 @@ button, .btn { border-radius: calc(var(--radius) - 4px) !important; }
 .app-section > h5, .app-section > h4, .app-section > h3 { text-align:center; }
 .dashboard-bento { margin-left:auto; margin-right:auto; }
 /* high contrast mode removed */
+
+/* Modal form inputs: white background with dark readable text */
+.modal-content .form-control, 
+.modal-content .form-select, 
+.modal-content textarea {
+  background:#ffffff !important;
+  color:#10202f !important;
+  border:1px solid var(--border) !important;
+  box-shadow:none;
+}
+.modal-content .form-control:focus, 
+.modal-content .form-select:focus, 
+.modal-content textarea:focus {
+  border-color: var(--accent) !important;
+  box-shadow:0 0 0 2px var(--accent-soft) !important;
+  color:#0b1622 !important;
+}
+.modal-content .form-control::placeholder, 
+.modal-content textarea::placeholder {
+  color:#5d6e7c !important;
+  opacity:1;
+}
+.modal-content label.form-label { color:#e6f3ff !important; }

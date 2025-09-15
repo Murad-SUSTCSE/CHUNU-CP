@@ -3,7 +3,7 @@
   const STORAGE_KEY = 'cpTrackerDataV1';
   const ACCENT_KEY = 'cpTrackerAccent';
 
-  const defaultData = { nextMonthRating: [], topics4Weeks: [], upsolve: [] };
+  const defaultData = { nextMonthRating: [], nextMonthTopic: [], topics4Weeks: [], upsolve: [] };
   let state = loadState();
 
   function loadState(){
@@ -33,11 +33,12 @@
     if(key==='topics-4-weeks') render4WeekTopics();
     if(key==='upsolve') renderUpsolve();
     if(key==='calendar') renderCalendar();
+    if(key==='all-problems') renderAllProblems();
     if(!skipHash){ const current = location.hash.replace('#',''); if(current!==key) history.pushState({section:key}, '', '#'+key); }
   }
   window.addEventListener('popstate', ()=>{ const sec=(location.hash||'').replace('#','')||'dashboard'; showSection(sec,true); });
 
-  function refreshStats(){ const total= state.nextMonthRating.length + state.upsolve.length; const sr= state.nextMonthRating.filter(p=>p.solved).length; const su= state.upsolve.filter(p=>p.solved).length; const solved= sr+su; const pct = total? Math.round(solved/total*100):0; byId('overallSummary').textContent = `${solved}/${total} solved (${pct}%)`; byId('dashRatingCounts').textContent=`${sr}/${state.nextMonthRating.length} solved`; const dashUps = byId('dashUpsolveCounts'); if(dashUps) dashUps.textContent=`${su}/${state.upsolve.length} solved`; const dashTopics = byId('dashTopicCounts'); if(dashTopics) dashTopics.textContent=''; const topicsCompleted = state.topics4Weeks.filter(t=>t.status==='completed').length; byId('dash4WeekCounts').textContent = `${topicsCompleted}/${state.topics4Weeks.length} completed`; animateDonut(pct, solved, total); }
+  function refreshStats(){ const total= state.nextMonthRating.length + state.nextMonthTopic.length + state.upsolve.length; const sr= state.nextMonthRating.filter(p=>p.solved).length; const st= state.nextMonthTopic.filter(p=>p.solved).length; const su= state.upsolve.filter(p=>p.solved).length; const solved= sr+st+su; const pct = total? Math.round(solved/total*100):0; byId('overallSummary').textContent = `${solved}/${total} solved (${pct}%)`; byId('dashRatingCounts').textContent=`${sr}/${state.nextMonthRating.length} solved`; const dashUps = byId('dashUpsolveCounts'); if(dashUps) dashUps.textContent=`${su}/${state.upsolve.length} solved`; const topicsCompleted = state.topics4Weeks.filter(t=>t.status==='completed').length; const dash4 = byId('dash4WeekCounts'); if(dash4) dash4.textContent = `${topicsCompleted}/${state.topics4Weeks.length} completed`; animateDonut(pct, solved, total); }
 
   // Animated donut
   let donutAnimating=false; function animateDonut(targetPct, solved, total){ const canvas=byId('progressDonut'); if(!canvas) return; const ctx=canvas.getContext('2d'); const w = canvas.width = canvas.clientWidth || 140; const h = canvas.height = 140; const cx=w/2, cy=h/2, r=Math.min(w,h)/2-10; const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#0d6efd'; const border = getComputedStyle(document.documentElement).getPropertyValue('--border').trim()||'#334'; let start=null; const duration=900; donutAnimating=true; function frame(ts){ if(!start) start=ts; const t=(ts-start)/duration; const ease = t<1? (1- Math.pow(1-t,3)):1; const pct = Math.round(targetPct*ease); ctx.clearRect(0,0,w,h); ctx.lineWidth=18; ctx.strokeStyle=border; ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.stroke(); const end = (pct/100)*Math.PI*2 - Math.PI/2; ctx.strokeStyle=accent; ctx.lineCap='round'; ctx.beginPath(); ctx.arc(cx,cy,r,-Math.PI/2,end); ctx.stroke(); ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--text'); ctx.font='bold 18px system-ui,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(pct+'%', cx, cy-4); ctx.font='12px system-ui,sans-serif'; ctx.fillText(`${solved}/${total}`, cx, cy+14); if(ease<1) requestAnimationFrame(frame); else donutAnimating=false; } requestAnimationFrame(frame); }
@@ -135,7 +136,41 @@
     }).join('');
   }
 
-  // Topic problems feature removed
+  function groupTopics(){
+    const map = {};
+    state.nextMonthTopic.forEach(p=>{ const key = (p.topic||'General').trim(); map[key]=map[key]||[]; map[key].push(p); });
+    return Object.entries(map).sort((a,b)=> a[0].localeCompare(b[0]));
+  }
+  function renderTopicProblems(){
+    const wrap = byId('topicProblemsContainer'); if(!wrap) return;
+    const filter = byId('ratingFilter').value; // reuse same filter select
+    const groups = groupTopics();
+    if(groups.length===0){ wrap.innerHTML = '<div class="placeholder-empty p-3">No topic problems yet.</div>'; return; }
+    wrap.innerHTML = groups.map((g,i)=>{
+      const [topic, arr] = g;
+      const items = arr.filter(p=> filter==='all' || (filter==='solved'?p.solved:!p.solved))
+        .map(p=> `<div class='d-flex align-items-center justify-content-between py-1'>
+          <div class='flex-grow-1'><input type='checkbox' data-action='toggle-topicprob' data-id='${p.id}' ${p.solved?'checked':''} class='form-check-input me-2'>
+            <a href='${p.link}' target='_blank' rel='noopener' class='me-2'>${escapeHtml(p.name||'Untitled')}</a>
+            <span class='badge ${p.solved?'badge-solved':'badge-unsolved'}'>${p.solved?'Solved':'Todo'}</span>
+            <small class='text-muted ms-2'>${escapeHtml(p.topic||'')}</small>
+          </div>
+          <div class='btn-group btn-group-sm'>
+            <button class='btn btn-outline-secondary' data-action='edit-topicprob' data-id='${p.id}'>Edit</button>
+            <button class='btn btn-outline-danger' data-action='delete-topicprob' data-id='${p.id}'>Del</button>
+          </div>
+        </div>`).join('');
+      if(!items) return '';
+      return `<div class='accordion-item'>
+        <h2 class='accordion-header'>
+          <button class='accordion-button collapsed' type='button' data-bs-toggle='collapse' data-bs-target='#tp${i}'>${escapeHtml(topic)}</button>
+        </h2>
+        <div id='tp${i}' class='accordion-collapse collapse'>
+          <div class='accordion-body p-2'>${items||'<em>Empty</em>'}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
 
   function render4WeekTopics(){
     const wrap = byId('topics4WeeksContainer'); if(!wrap) return;
@@ -489,20 +524,33 @@
     return modalEl;
   }
 
-  function addOrEditRatingProblem(existing){
-    const m = openModal(existing? 'Edit Rating Problem':'Add Rating Problem', `
-      <form id='ratingForm'>
+  function addOrEditProblemUnified(existing, forceType){
+    const isTopic = forceType? forceType==='topic' : (!!existing && existing._kind==='topic');
+    const problemType = existing? (existing._kind|| (existing.rating!==undefined?'rating':'topic')) : (forceType||'rating');
+    const m = openModal(existing? 'Edit Problem':'Add Problem', `
+      <form id='problemForm'>
+        <div class='mb-2'>
+          <label class='form-label'>Problem Type</label>
+          <select name='ptype' id='problemTypeSelect' class='form-select form-select-sm'>
+            <option value='rating' ${problemType==='rating'?'selected':''}>Rating Based</option>
+            <option value='topic' ${problemType==='topic'?'selected':''}>Topic Based</option>
+          </select>
+        </div>
         <div class='mb-2'>
           <label class='form-label'>Name</label>
-          <input type='text' name='name' class='form-control' value='${escapeHtml(existing?.name||'')}' />
+            <input type='text' name='name' class='form-control' value='${escapeHtml(existing?.name||'')}' />
         </div>
         <div class='mb-2'>
           <label class='form-label'>Link *</label>
           <input required type='url' name='link' class='form-control' value='${escapeHtml(existing?.link||'')}' />
         </div>
-        <div class='mb-2'>
+        <div class='mb-2 rating-field'>
           <label class='form-label'>Rating</label>
-          <input type='number' name='rating' class='form-control' value='${escapeHtml(existing?.rating||'')}' />
+          <input type='number' name='rating' class='form-control' value='${problemType==='rating'? escapeHtml(existing?.rating||''):''}' />
+        </div>
+        <div class='mb-2 topic-field'>
+          <label class='form-label'>Topic</label>
+          <input type='text' name='topic' class='form-control' value='${problemType==='topic'? escapeHtml(existing?.topic||''):''}' placeholder='DP, Graphs, ...' />
         </div>
         <div class='mb-2'>
           <label class='form-label'>Notes</label>
@@ -510,18 +558,43 @@
         </div>
       </form>
     `, (modal)=>{
-      const form = modal.querySelector('#ratingForm');
+      const form = modal.querySelector('#problemForm');
       if(!form.reportValidity()) return false;
       const fd = new FormData(form);
+      const data = Object.fromEntries(fd.entries());
+      const type = data.ptype;
       if(existing){
-        Object.assign(existing, Object.fromEntries(fd.entries()));
+        if(existing._kind==='rating' && type==='rating'){
+          Object.assign(existing, { name:data.name, link:data.link, rating:data.rating, notes:data.notes });
+        } else if(existing._kind==='topic' && type==='topic'){
+          Object.assign(existing, { name:data.name, link:data.link, topic:data.topic, notes:data.notes });
+        } else {
+          // Moved between categories: delete old, add new
+          if(existing._kind==='rating'){
+            state.nextMonthRating = state.nextMonthRating.filter(p=>p.id!==existing.id);
+          } else if(existing._kind==='topic'){
+            state.nextMonthTopic = state.nextMonthTopic.filter(p=>p.id!==existing.id);
+          }
+          if(type==='rating') state.nextMonthRating.push({ id: uid(), solved: existing.solved||false, name:data.name, link:data.link, rating:data.rating, notes:data.notes, _kind:'rating' });
+          else state.nextMonthTopic.push({ id: uid(), solved: existing.solved||false, name:data.name, link:data.link, topic:data.topic, notes:data.notes, _kind:'topic' });
+        }
       } else {
-        state.nextMonthRating.push({ id: uid(), solved:false, ...Object.fromEntries(fd.entries()) });
+        if(type==='rating') state.nextMonthRating.push({ id: uid(), solved:false, name:data.name, link:data.link, rating:data.rating, notes:data.notes, _kind:'rating' });
+        else state.nextMonthTopic.push({ id: uid(), solved:false, name:data.name, link:data.link, topic:data.topic, notes:data.notes, _kind:'topic' });
       }
       saveState();
       renderRatingProblems();
+      renderTopicProblems();
       refreshStats();
     });
+    // Show/hide conditional fields
+    function updateFields(){
+      const sel = m.querySelector('#problemTypeSelect').value;
+      m.querySelector('.rating-field').style.display = sel==='rating'? 'block':'none';
+      m.querySelector('.topic-field').style.display = sel==='topic'? 'block':'none';
+    }
+    m.querySelector('#problemTypeSelect').addEventListener('change', updateFields);
+    updateFields();
   }
   // Topic problem add/edit removed
 
@@ -566,6 +639,10 @@
         const item = state.upsolve.find(p=>p.id===id); if(item) openUpsolveModal(item);
       } else if(action==='delete-upsolve'){
         state.upsolve = state.upsolve.filter(p=>p.id!==id); saveState(); renderUpsolve(); refreshStats();
+      } else if(action==='delete-ap-rating'){
+        state.nextMonthRating = state.nextMonthRating.filter(p=>p.id!==id); saveState(); renderAllProblems(); renderRatingProblems(); refreshStats();
+      } else if(action==='delete-ap-topic'){
+        state.nextMonthTopic = state.nextMonthTopic.filter(p=>p.id!==id); saveState(); renderAllProblems(); renderTopicProblems(); refreshStats();
       }
     }
   });
@@ -579,12 +656,13 @@
       const item = state.topics4Weeks.find(t=>t.id===id);
       if(item){ item.status = e.target.value; saveState(); refreshStats(); }
     }
-    if(e.target.matches('[data-action="toggle-rating"]')){ const item = state.nextMonthRating.find(p=>p.id===e.target.dataset.id); if(item){ item.solved = e.target.checked; saveState(); renderRatingProblems(); }}
-  // topic toggle removed
+    if(e.target.matches('[data-action="toggle-rating"]')){ const item = state.nextMonthRating.find(p=>p.id===e.target.dataset.id); if(item){ item.solved = e.target.checked; saveState(); renderRatingProblems(); renderTopicProblems(); renderAllProblems(); }}
+    if(e.target.matches('[data-action="toggle-topicprob"]')){ const item = state.nextMonthTopic.find(p=>p.id===e.target.dataset.id); if(item){ item.solved = e.target.checked; saveState(); renderTopicProblems(); renderRatingProblems(); renderAllProblems(); }}
     if(e.target.matches('[data-action="toggle-upsolve"]')){ const item = state.upsolve.find(p=>p.id===e.target.dataset.id); if(item){ item.solved = e.target.checked; saveState(); renderUpsolve(); }}
+  if(e.target.matches('[data-action="toggle-ap-rating"]')){ const item = state.nextMonthRating.find(p=>p.id===e.target.dataset.id); if(item){ item.solved = e.target.checked; saveState(); renderAllProblems(); renderRatingProblems(); }}
+  if(e.target.matches('[data-action="toggle-ap-topic"]')){ const item = state.nextMonthTopic.find(p=>p.id===e.target.dataset.id); if(item){ item.solved = e.target.checked; saveState(); renderAllProblems(); renderTopicProblems(); }}
   });
-  byId('addRatingProblemBtn').addEventListener('click', ()=> addOrEditRatingProblem());
-  // addTopicProblemBtn removed from DOM
+  byId('addProblemUnifiedBtn')?.addEventListener('click', ()=> addOrEditProblemUnified());
   byId('add4WeekTopicBtn').addEventListener('click', ()=> open4WeekTopicModal());
   byId('addUpsolveBtn').addEventListener('click', ()=> openUpsolveModal());
   const accentPicker = byId('accentColorPicker');
@@ -637,11 +715,12 @@
     return [
       { title:'Go: Dashboard', desc:'Show overall progress', keywords:['dash','home'], run:()=> showSection('dashboard'), icon:'🏠' },
   { title:'Go: New Problems', desc:'Problem list', keywords:['rating','new','problems'], run:()=>{ showSection('next-month'); }, icon:'📊' },
-  { title:'Go: Revision', desc:'Revision topics', keywords:['revision','topics'], run:()=> showSection('topics-4-weeks'), icon:'🗂️' },
+  { title:'Go: Topics', desc:'Study topics', keywords:['topics','study'], run:()=> showSection('topics-4-weeks'), icon:'🗂️' },
       { title:'Go: Upsolve', desc:'Pending contest problems', keywords:['upsolve','contest'], run:()=> showSection('upsolve'), icon:'♻️' },
       { title:'Go: Calendar', desc:'Activity calendar', keywords:['calendar','schedule'], run:()=> showSection('calendar'), icon:'🗓️' },
+      { title:'Go: All Problems', desc:'All problems aggregated', keywords:['all','aggregate','problems'], run:()=> showSection('all-problems'), icon:'🗃️' },
   { title:'Add: New Problem', desc:'Quick add form', keywords:['add','rating','problem'], run:()=> addOrEditRatingProblem(), icon:'➕' },
-  { title:'Add: Revision Topic', desc:'Plan study block', keywords:['add','revision'], run:()=> open4WeekTopicModal(), icon:'➕' },
+  { title:'Add: Topic Block', desc:'Plan study block', keywords:['add','topic','block'], run:()=> open4WeekTopicModal(), icon:'➕' },
       { title:'Add: Upsolve Entry', desc:'Add problem or contest', keywords:['add','upsolve'], run:()=> openUpsolveModal(), icon:'➕' },
       { title:'Open Analytics', desc:'View breakdown', keywords:['analytics','stats'], run:()=> openAnalytics(), icon:'📈' }
     ];
@@ -691,6 +770,109 @@
 
   function renderAll(){ refreshStats(); renderRatingProblems(); render4WeekTopics(); renderUpsolve(); renderCalendar(); }
 
+  /* All Problems Aggregation */
+  function renderAllProblems(){
+    const container = byId('allProblemsContainer'); if(!container) return;
+    const filterSel = byId('allProblemsFilter');
+    const modeRatingBtn = byId('allProblemsRatingBtn');
+    const modeTopicBtn = byId('allProblemsTopicBtn');
+    const mode = modeRatingBtn.classList.contains('active') ? 'rating' : 'topic';
+    const filter = filterSel.value;
+    if(mode==='rating'){
+      container.innerHTML = buildAllProblemsRating(filter);
+    } else {
+      container.innerHTML = buildAllProblemsTopic(filter);
+    }
+  }
+  function buildAllProblemsRating(filter){
+    // combine rating problems and upsolve flattened problems list
+    const items = [];
+    state.nextMonthRating.forEach(p=> items.push({ type:'rating', id:p.id, name:p.name||'Untitled', link:p.link, rating:p.rating||'-', solved:p.solved }));
+    state.nextMonthTopic.forEach(p=> items.push({ type:'topic', id:p.id, name:p.name||'Untitled', link:p.link, rating:'-', solved:p.solved, topic:p.topic||'General' }));
+    state.upsolve.forEach(u=>{
+      if(u.kind==='problem') items.push({ type:'upsolve', id:u.id, name:u.name||'Untitled', link:u.link, rating:'-', solved:u.solved });
+      if(u.kind==='contest' && u.problems){
+        u.problems.forEach(ch=> items.push({ type:'contest-problem', parent:u.id, id:u.id+':'+(ch.link||ch.name), name: (u.name? u.name+': ':'') + (ch.name||'Problem'), link:ch.link, rating:'-', solved:ch.solved }));
+      }
+    });
+    const filtered = items.filter(p=> filter==='all' || (filter==='solved'?p.solved:!p.solved));
+    // group by rating (only rating problems have rating numeric)
+    const groups = {};
+    filtered.forEach(p=>{
+      let bucket = 'Unrated';
+      if(p.type==='rating'){
+        const r = parseInt(p.rating,10);
+        if(!isNaN(r)){
+          const start = Math.floor(r/200)*200; bucket = start+'-'+(start+200);
+        }
+      }
+      groups[bucket] = groups[bucket] || [];
+      groups[bucket].push(p);
+    });
+    const ordered = Object.entries(groups).sort((a,b)=> a[0].localeCompare(b[0]));
+    if(!ordered.length) return '<div class="placeholder-empty p-3">No problems.</div>';
+    return ordered.map(([label, arr],i)=>{
+      const rows = arr.map(p=> `<div class='d-flex justify-content-between align-items-center py-1'>
+          <div class='flex-grow-1'>
+            <input type='checkbox' class='form-check-input me-2' data-action='toggle-ap-${p.type}' data-id='${p.id}'>
+            ${p.type==='contest-problem'?'<span class="badge bg-secondary me-1">C</span>':''}
+            <a href='${p.link}' target='_blank' rel='noopener' class='me-2'>${escapeHtml(p.name)}</a>
+            <span class='badge ${p.solved?'badge-solved':'badge-unsolved'}'>${p.solved?'Solved':'Todo'}</span>
+          </div>
+          <div class='btn-group btn-group-sm'>
+            ${p.type!=='contest-problem'?`<button class='btn btn-outline-danger' data-action='delete-ap-${p.type}' data-id='${p.id}'>Del</button>`:''}
+          </div>
+        </div>`).join('');
+      return `<div class='accordion-item'>
+        <h2 class='accordion-header'>
+          <button class='accordion-button collapsed' type='button' data-bs-toggle='collapse' data-bs-target='#aprg${i}'>${escapeHtml(label)}</button>
+        </h2>
+        <div id='aprg${i}' class='accordion-collapse collapse'>
+          <div class='accordion-body p-2'>${rows||'<em>Empty</em>'}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  function buildAllProblemsTopic(filter){
+    // group by synthetic topic/platform (since original topic problems removed) -> use upsolve platform or label 'Rating List'
+    const groups = {};
+    const push = (key,obj)=>{ groups[key]=groups[key]||[]; groups[key].push(obj); };
+  state.nextMonthRating.forEach(p=>{ if(filter==='all' || (filter==='solved'?p.solved:!p.solved)) push('Rating List', { id:p.id, type:'rating', name:p.name||'Untitled', link:p.link, solved:p.solved }); });
+  state.nextMonthTopic.forEach(p=>{ if(filter==='all' || (filter==='solved'?p.solved:!p.solved)) push(p.topic||'General', { id:p.id, type:'topic', name:p.name||'Untitled', link:p.link, solved:p.solved }); });
+    state.upsolve.forEach(u=>{
+      if(u.kind==='problem'){
+        if(filter==='all' || (filter==='solved'?u.solved:!u.solved)) push('Upsolve', { name:u.name||'Untitled', link:u.link, solved:u.solved });
+      } else if(u.kind==='contest') {
+        const key = u.platform? u.platform+' Contest': 'Contest';
+        if(u.problems && u.problems.length){
+          u.problems.forEach(ch=>{ if(filter==='all' || (filter==='solved'?ch.solved:!ch.solved)) push(key, { name:(u.name? u.name+': ':'')+(ch.name||'Problem'), link:ch.link, solved:ch.solved }); });
+        }
+      }
+    });
+    const ordered = Object.entries(groups).sort((a,b)=> a[0].localeCompare(b[0]));
+    if(!ordered.length) return '<div class="placeholder-empty p-3">No problems.</div>';
+    return ordered.map(([label, arr],i)=>{
+      const rows = arr.map(p=> `<div class='d-flex justify-content-between align-items-center py-1'>
+          <div class='flex-grow-1'>
+            <input type='checkbox' class='form-check-input me-2' data-action='toggle-ap-${p.type}' data-id='${p.id}'>
+            <a href='${p.link}' target='_blank' rel='noopener' class='me-2'>${escapeHtml(p.name)}</a>
+            <span class='badge ${p.solved?'badge-solved':'badge-unsolved'}'>${p.solved?'Solved':'Todo'}</span>
+          </div>
+          <div class='btn-group btn-group-sm'>
+            <button class='btn btn-outline-danger' data-action='delete-ap-${p.type}' data-id='${p.id}'>Del</button>
+          </div>
+        </div>`).join('');
+      return `<div class='accordion-item'>
+        <h2 class='accordion-header'>
+          <button class='accordion-button collapsed' type='button' data-bs-toggle='collapse' data-bs-target='#aptt${i}'>${escapeHtml(label)}</button>
+        </h2>
+        <div id='aptt${i}' class='accordion-collapse collapse'>
+          <div class='accordion-body p-2'>${rows||'<em>Empty</em>'}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
   // Initial enhancements after existing content loaded
   initTheme();
   loadAccent();
@@ -707,6 +889,30 @@
     initParallax();
     applyGradientHeadings();
     initCommandPalette();
+    // All Problems events
+    const ratingBtn = document.getElementById('allProblemsRatingBtn');
+    const topicBtn = document.getElementById('allProblemsTopicBtn');
+    const filterSel = document.getElementById('allProblemsFilter');
+    function switchMode(target){
+      if(!ratingBtn || !topicBtn) return;
+      if(target==='rating'){ ratingBtn.classList.add('active'); topicBtn.classList.remove('active'); }
+      else { topicBtn.classList.add('active'); ratingBtn.classList.remove('active'); }
+      renderAllProblems();
+    }
+    ratingBtn?.addEventListener('click', ()=> switchMode('rating'));
+    topicBtn?.addEventListener('click', ()=> switchMode('topic'));
+    filterSel?.addEventListener('change', ()=> renderAllProblems());
+    // New Problems mode toggle
+    const ratingModeBtn = document.getElementById('modeRatingListBtn');
+    const topicModeBtn = document.getElementById('modeTopicListBtn');
+    function applyProblemMode(mode){
+      const ratingWrap = document.getElementById('ratingProblemsContainer');
+      const topicWrap = document.getElementById('topicProblemsContainer');
+      if(mode==='rating'){ ratingModeBtn.classList.add('active'); topicModeBtn.classList.remove('active'); ratingWrap.classList.remove('d-none'); topicWrap.classList.add('d-none'); renderRatingProblems(); }
+      else { topicModeBtn.classList.add('active'); ratingModeBtn.classList.remove('active'); topicWrap.classList.remove('d-none'); ratingWrap.classList.add('d-none'); renderTopicProblems(); }
+    }
+    ratingModeBtn?.addEventListener('click', ()=> applyProblemMode('rating'));
+    topicModeBtn?.addEventListener('click', ()=> applyProblemMode('topic'));
   }, 150);
 })();
 
