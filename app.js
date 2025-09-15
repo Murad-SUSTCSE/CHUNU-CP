@@ -704,6 +704,11 @@
   }
   });
   byId('addProblemUnifiedBtn')?.addEventListener('click', ()=> addOrEditProblemUnified());
+  // Ensure menu button explicitly opens side menu
+  const openMenuBtn = byId('openMenuBtn');
+  if(openMenuBtn){
+    openMenuBtn.addEventListener('click', (e)=>{ e.preventDefault(); e.stopPropagation(); if(typeof openSideMenu==='function') openSideMenu(); });
+  }
   byId('add4WeekTopicBtn')?.addEventListener('click', ()=> open4WeekTopicModal());
   byId('addUpsolveBtn')?.addEventListener('click', ()=> openUpsolveModal());
   const accentPicker = byId('accentColorPicker');
@@ -899,6 +904,22 @@
 
   const initial = (location.hash||'').replace('#','') || 'dashboard';
   showSection(initial, true);
+
+  // Early All Problems mode listeners (in case user clicks before timeout init)
+  (function(){
+    const ratingBtn = document.getElementById('allProblemsRatingBtn');
+    const topicBtn = document.getElementById('allProblemsTopicBtn');
+    const filterSel = document.getElementById('allProblemsFilter');
+    function switchMode(target){
+      if(!ratingBtn || !topicBtn) return;
+      if(target==='rating'){ ratingBtn.classList.add('active'); topicBtn.classList.remove('active'); }
+      else { topicBtn.classList.add('active'); ratingBtn.classList.remove('active'); }
+      renderAllProblems();
+    }
+    ratingBtn?.addEventListener('click', ()=> switchMode('rating'));
+    topicBtn?.addEventListener('click', ()=> switchMode('topic'));
+    filterSel?.addEventListener('change', ()=> renderAllProblems());
+  })();
 
   setTimeout(()=>{
     document.querySelectorAll('.skeleton').forEach(s=> s.remove());

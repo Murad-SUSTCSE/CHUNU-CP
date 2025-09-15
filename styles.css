@@ -29,9 +29,10 @@ small, .small { font-size: .8rem; line-height:1.3; }
 /* Card readability tweaks */
 .card, .accordion-item, .list-group-item { background: linear-gradient(145deg, rgba(20,50,75,.92), rgba(15,40,60,.88)) !important; }
 .card p, .list-group-item p, .accordion-body, td, th, li { color:#ffffff !important; }
-/* Inputs and selects text color */
-input, select, textarea { color:#ffffff !important; }
+/* Unified translucent inputs */
+input, select, textarea { color:#ffffff !important; background:rgba(255,255,255,.07) !important; border:1px solid rgba(255,255,255,.18) !important; backdrop-filter:blur(6px); }
 input::placeholder, textarea::placeholder { color:#b9d2e4 !important; opacity:1; }
+select option { color:#0d1b28; background:#ffffff; }
 /* Table cells */
 table td, table th { color:#fff !important; }
 /* Buttons keep their original colors */
@@ -80,8 +81,8 @@ button, .btn { border-radius: calc(var(--radius) - 4px) !important; }
 .glow-hover::after { content:""; position:absolute; inset:-2px; border-radius:inherit; background:radial-gradient(circle at 50% 50%, rgba(var(--accent-rgb),.55), transparent 70%); opacity:0; transition:opacity .35s; filter:blur(8px); z-index:-1; }
 .glow-hover:hover::after { opacity:.9; }
 
-.form-control, .form-select { background: var(--bg-alt); border:1px solid var(--border); border-radius: calc(var(--radius) - 4px); }
-.form-control:focus, .form-select:focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.form-control, .form-select { background:rgba(255,255,255,.09) !important; border:1px solid rgba(255,255,255,.25) !important; border-radius: calc(var(--radius) - 4px); }
+.form-control:focus, .form-select:focus { border-color: var(--accent) !important; box-shadow: 0 0 0 2px var(--accent-soft) !important; }
 
 .app-section { animation: fade .2s ease-in; }
 @keyframes fade { from { opacity:0 } to { opacity:1 } }
@@ -208,25 +209,13 @@ button, .btn { border-radius: calc(var(--radius) - 4px) !important; }
 .dashboard-bento { margin-left:auto; margin-right:auto; }
 /* high contrast mode removed */
 
-/* Modal form inputs: white background with dark readable text */
+/* Modal inputs same translucent style */
 .modal-content .form-control, 
 .modal-content .form-select, 
-.modal-content textarea {
-  background:#ffffff !important;
-  color:#10202f !important;
-  border:1px solid var(--border) !important;
-  box-shadow:none;
-}
+.modal-content textarea { background:rgba(255,255,255,.12) !important; color:#ffffff !important; border:1px solid rgba(255,255,255,.28) !important; box-shadow:none; }
 .modal-content .form-control:focus, 
 .modal-content .form-select:focus, 
-.modal-content textarea:focus {
-  border-color: var(--accent) !important;
-  box-shadow:0 0 0 2px var(--accent-soft) !important;
-  color:#0b1622 !important;
-}
+.modal-content textarea:focus { border-color:var(--accent) !important; box-shadow:0 0 0 2px var(--accent-soft) !important; }
 .modal-content .form-control::placeholder, 
-.modal-content textarea::placeholder {
-  color:#5d6e7c !important;
-  opacity:1;
-}
-.modal-content label.form-label { color:#e6f3ff !important; }
+.modal-content textarea::placeholder { color:#c3d6e5 !important; opacity:1; }
+.modal-content label.form-label { color:#f2f9ff !important; }
