@@ -20,9 +20,18 @@
   const uid = () => Math.random().toString(36).slice(2,11);
   const byId = id => document.getElementById(id);
 
-  function showSection(key, skipHash){ document.querySelectorAll('.app-section').forEach(s=>s.classList.add('d-none')); const target = byId('section-'+key); if(target) target.classList.remove('d-none'); if(key==='dashboard') refreshStats(); if(key==='next-month'){ renderRatingProblems(); renderTopicProblems(); } if(key==='topics-4-weeks') render4WeekTopics(); if(key==='upsolve') renderUpsolve(); if(key==='calendar') renderCalendar(); if(!skipHash){ const current = location.hash.replace('#',''); if(current!==key) history.pushState({section:key}, '', '#'+key); highlightActiveNav(key);} }
-  function highlightActiveNav(key){ document.querySelectorAll('.nav-link[data-section]').forEach(n=> n.classList.toggle('active', n.getAttribute('data-section')===key)); }
-  window.addEventListener('popstate', ()=>{ const sec=(location.hash||'').replace('#','')||'dashboard'; showSection(sec,true); highlightActiveNav(sec); });
+  // New layout: all sections visible; showSection kept for compatibility (scroll into view)
+  function showSection(key, skipHash){
+    const target = byId('section-'+key);
+    if(target){ target.scrollIntoView({behavior:'smooth', block:'start'}); }
+    if(key==='dashboard') refreshStats();
+    if(key==='next-month'){ renderRatingProblems(); renderTopicProblems(); }
+    if(key==='topics-4-weeks') render4WeekTopics();
+    if(key==='upsolve') renderUpsolve();
+    if(key==='calendar') renderCalendar();
+    if(!skipHash){ const current = location.hash.replace('#',''); if(current!==key) history.pushState({section:key}, '', '#'+key); }
+  }
+  window.addEventListener('popstate', ()=>{ const sec=(location.hash||'').replace('#','')||'dashboard'; showSection(sec,true); });
 
   function refreshStats(){ const total= state.nextMonthRating.length + state.nextMonthTopic.length + state.upsolve.length; const sr= state.nextMonthRating.filter(p=>p.solved).length; const st= state.nextMonthTopic.filter(p=>p.solved).length; const su= state.upsolve.filter(p=>p.solved).length; const solved= sr+st+su; const pct = total? Math.round(solved/total*100):0; byId('overallSummary').textContent = `${solved}/${total} solved (${pct}%)`; byId('dashRatingCounts').textContent=`${sr}/${state.nextMonthRating.length} solved`; byId('dashTopicCounts').textContent=`${st}/${state.nextMonthTopic.length} solved`; byId('dashUpsolveCounts').textContent=`${su}/${state.upsolve.length} solved`; const topicsCompleted = state.topics4Weeks.filter(t=>t.status==='completed').length; byId('dash4WeekCounts').textContent = `${topicsCompleted}/${state.topics4Weeks.length} completed`; animateDonut(pct, solved, total); }
 
@@ -464,7 +473,7 @@
   function globalSearch(query){
     query = query.trim().toLowerCase();
     const results = [];
-    if(!query){ byId('section-search-results').classList.add('d-none'); return; }
+  if(!query){ byId('section-search-results').classList.add('d-none'); return; }
     const pushMatch = (type,obj,nameField='name')=>{
       if((obj[nameField]||'').toLowerCase().includes(query)) results.push({type,...obj});
     };
@@ -478,7 +487,7 @@
         <div class='small text-truncate'><a href='${r.link||'#'}' target='_blank'>${r.link||''}</a></div>
       </div>
     </div>`).join('') || '<div class="p-2 text-muted">No matches.</div>';
-    showSection('search-results');
+  byId('section-search-results').classList.remove('d-none');
   }
 
   // Escape helper
@@ -587,11 +596,15 @@
   // Event Delegation
   document.addEventListener('click', (e)=>{
     const a = e.target.closest('[data-section]');
-    if(a){ showSection(a.getAttribute('data-section')); }
+    if(a){
+      const sec = a.getAttribute('data-section');
+      showSection(sec);
+      closeSideMenu();
+    }
     const jump = e.target.closest('[data-section-jump]');
     if(jump){
       const key = jump.getAttribute('data-section-jump');
-      document.querySelector(`.nav-link[data-section='${key}']`)?.click();
+  showSection(key);
       const tab = jump.getAttribute('data-tab');
       if(tab){
         const tabBtn = byId(tab+'-tab');
@@ -762,4 +775,46 @@
     applyGradientHeadings();
     initCommandPalette();
   }, 150);
+})();
+
+/* Side menu logic */
+(function(){
+  const sideMenu = document.getElementById('sideMenu');
+  const backdrop = document.getElementById('menuBackdrop');
+  const openBtn = document.getElementById('openMenuBtn');
+  const closeBtn = document.getElementById('closeMenuBtn');
+  if(!sideMenu || !backdrop || !openBtn || !closeBtn) return;
+  window.openSideMenu = function(){ sideMenu.classList.add('open'); sideMenu.classList.remove('hidden'); backdrop.classList.add('show'); backdrop.classList.remove('hidden'); sideMenu.setAttribute('aria-hidden','false'); };
+  window.closeSideMenu = function(){ sideMenu.classList.remove('open'); backdrop.classList.remove('show'); sideMenu.setAttribute('aria-hidden','true'); setTimeout(()=>{ sideMenu.classList.add('hidden'); backdrop.classList.add('hidden'); }, 420); };
+  openBtn.addEventListener('click', ()=> openSideMenu());
+  closeBtn.addEventListener('click', ()=> closeSideMenu());
+  backdrop.addEventListener('click', ()=> closeSideMenu());
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape' && sideMenu.classList.contains('open')) closeSideMenu(); });
+})();
+
+/* Mini TOC behavior */
+(function(){
+  const toc = document.getElementById('miniToc');
+  if(!toc) return;
+  const links = [...toc.querySelectorAll('a[data-toc-target]')];
+  const targets = links.map(l=> document.getElementById(l.getAttribute('data-toc-target'))).filter(Boolean);
+  // Click -> smooth scroll
+  toc.addEventListener('click', e=>{
+    const a = e.target.closest('a[data-toc-target]');
+    if(!a) return;
+    e.preventDefault();
+    const id = a.getAttribute('data-toc-target');
+    const el = document.getElementById(id);
+    if(el){ el.scrollIntoView({behavior:'smooth', block:'start'}); history.replaceState({},'', '#'+id); }
+  });
+  // Active highlight with IntersectionObserver
+  const observer = new IntersectionObserver((entries)=>{
+    entries.forEach(en=>{
+      if(en.isIntersecting){
+        const id = en.target.id;
+        links.forEach(l=> l.classList.toggle('active', l.getAttribute('data-toc-target')===id));
+      }
+    });
+  }, { root:null, rootMargin:'-40% 0px -55% 0px', threshold:[0,0.25,0.5,1] });
+  targets.forEach(t=> observer.observe(t));
 })();
