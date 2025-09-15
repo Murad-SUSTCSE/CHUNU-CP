@@ -3,7 +3,7 @@
   const STORAGE_KEY = 'cpTrackerDataV1';
   const ACCENT_KEY = 'cpTrackerAccent';
 
-  const defaultData = { nextMonthRating: [], nextMonthTopic: [], topics4Weeks: [], upsolve: [] };
+  const defaultData = { nextMonthRating: [], topics4Weeks: [], upsolve: [] };
   let state = loadState();
 
   function loadState(){
@@ -29,7 +29,7 @@
     const target = byId('section-'+key);
     if(target) target.scrollTop = 0;
     if(key==='dashboard') refreshStats();
-    if(key==='next-month'){ renderRatingProblems(); renderTopicProblems(); }
+  if(key==='next-month'){ renderRatingProblems(); }
     if(key==='topics-4-weeks') render4WeekTopics();
     if(key==='upsolve') renderUpsolve();
     if(key==='calendar') renderCalendar();
@@ -37,7 +37,7 @@
   }
   window.addEventListener('popstate', ()=>{ const sec=(location.hash||'').replace('#','')||'dashboard'; showSection(sec,true); });
 
-  function refreshStats(){ const total= state.nextMonthRating.length + state.nextMonthTopic.length + state.upsolve.length; const sr= state.nextMonthRating.filter(p=>p.solved).length; const st= state.nextMonthTopic.filter(p=>p.solved).length; const su= state.upsolve.filter(p=>p.solved).length; const solved= sr+st+su; const pct = total? Math.round(solved/total*100):0; byId('overallSummary').textContent = `${solved}/${total} solved (${pct}%)`; byId('dashRatingCounts').textContent=`${sr}/${state.nextMonthRating.length} solved`; byId('dashTopicCounts').textContent=`${st}/${state.nextMonthTopic.length} solved`; byId('dashUpsolveCounts').textContent=`${su}/${state.upsolve.length} solved`; const topicsCompleted = state.topics4Weeks.filter(t=>t.status==='completed').length; byId('dash4WeekCounts').textContent = `${topicsCompleted}/${state.topics4Weeks.length} completed`; animateDonut(pct, solved, total); }
+  function refreshStats(){ const total= state.nextMonthRating.length + state.upsolve.length; const sr= state.nextMonthRating.filter(p=>p.solved).length; const su= state.upsolve.filter(p=>p.solved).length; const solved= sr+su; const pct = total? Math.round(solved/total*100):0; byId('overallSummary').textContent = `${solved}/${total} solved (${pct}%)`; byId('dashRatingCounts').textContent=`${sr}/${state.nextMonthRating.length} solved`; const dashUps = byId('dashUpsolveCounts'); if(dashUps) dashUps.textContent=`${su}/${state.upsolve.length} solved`; const dashTopics = byId('dashTopicCounts'); if(dashTopics) dashTopics.textContent=''; const topicsCompleted = state.topics4Weeks.filter(t=>t.status==='completed').length; byId('dash4WeekCounts').textContent = `${topicsCompleted}/${state.topics4Weeks.length} completed`; animateDonut(pct, solved, total); }
 
   // Animated donut
   let donutAnimating=false; function animateDonut(targetPct, solved, total){ const canvas=byId('progressDonut'); if(!canvas) return; const ctx=canvas.getContext('2d'); const w = canvas.width = canvas.clientWidth || 140; const h = canvas.height = 140; const cx=w/2, cy=h/2, r=Math.min(w,h)/2-10; const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#0d6efd'; const border = getComputedStyle(document.documentElement).getPropertyValue('--border').trim()||'#334'; let start=null; const duration=900; donutAnimating=true; function frame(ts){ if(!start) start=ts; const t=(ts-start)/duration; const ease = t<1? (1- Math.pow(1-t,3)):1; const pct = Math.round(targetPct*ease); ctx.clearRect(0,0,w,h); ctx.lineWidth=18; ctx.strokeStyle=border; ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.stroke(); const end = (pct/100)*Math.PI*2 - Math.PI/2; ctx.strokeStyle=accent; ctx.lineCap='round'; ctx.beginPath(); ctx.arc(cx,cy,r,-Math.PI/2,end); ctx.stroke(); ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--text'); ctx.font='bold 18px system-ui,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(pct+'%', cx, cy-4); ctx.font='12px system-ui,sans-serif'; ctx.fillText(`${solved}/${total}`, cx, cy+14); if(ease<1) requestAnimationFrame(frame); else donutAnimating=false; } requestAnimationFrame(frame); }
@@ -54,11 +54,8 @@
     });
     const ratingArray = Object.entries(buckets).sort((a,b)=> a[0].localeCompare(b[0]))
       .map(([label,val])=> ({ label, ...val, pct: val.total? Math.round(val.solved/val.total*100):0 }));
-    // Topic problems distribution
-    const topicMap = {};
-    state.nextMonthTopic.forEach(p=>{ const t=(p.topic||'General').trim(); topicMap[t]=topicMap[t]||{total:0,solved:0}; topicMap[t].total++; if(p.solved) topicMap[t].solved++; });
-    const topicArray = Object.entries(topicMap).sort((a,b)=> a[0].localeCompare(b[0]))
-      .map(([topic,val])=> ({ topic, ...val, pct: val.total? Math.round(val.solved/val.total*100):0 }));
+    // Topic problems removed
+    const topicArray = [];
     // Upsolve contest stats
     const contests = state.upsolve.filter(u=>u.kind==='contest');
     const contestStats = contests.map(c=>{
@@ -68,7 +65,7 @@
     });
     // 4-week topics progress
     const fourWeek = state.topics4Weeks.map(t=> ({ topic:t.topic, status:t.status||'not started' }));
-    return { ratingArray, topicArray, contestStats, fourWeek };
+  return { ratingArray, topicArray, contestStats, fourWeek };
   }
   function openAnalytics(){
     const data = computeAnalytics();
@@ -77,10 +74,7 @@
         <h6>Rating Buckets</h6>
         ${data.ratingArray.length? tableHtml(['Bucket','Solved','Total','%'], data.ratingArray.map(r=> [r.label, r.solved, r.total, r.pct+'%'])):'<div class="text-muted small">No rating problems.</div>'}
       </div>
-      <div class='mb-3'>
-        <h6>Topics</h6>
-        ${data.topicArray.length? tableHtml(['Topic','Solved','Total','%'], data.topicArray.map(r=> [escapeHtml(r.topic), r.solved, r.total, r.pct+'%'])):'<div class="text-muted small">No topic problems.</div>'}
-      </div>
+      
       <div class='mb-3'>
         <h6>Upsolve Contests</h6>
         ${data.contestStats.length? tableHtml(['Contest','Platform','Solved','Total','%'], data.contestStats.map(c=> [escapeHtml(c.name), escapeHtml(c.platform), c.solved, c.total, c.pct+'%'])):'<div class="text-muted small">No contests.</div>'}
@@ -141,40 +135,7 @@
     }).join('');
   }
 
-  function groupTopics(){
-    const map = {};
-    state.nextMonthTopic.forEach(p=>{ const key = (p.topic||'General').trim(); map[key]=map[key]||[]; map[key].push(p); });
-    return Object.entries(map).sort((a,b)=> a[0].localeCompare(b[0]));
-  }
-  function renderTopicProblems(){
-    const wrap = byId('topicProblemsContainer'); if(!wrap) return;
-    const filter = byId('topicFilter').value;
-    const groups = groupTopics();
-    if(groups.length===0){ wrap.innerHTML = '<div class="placeholder-empty p-3">No topic problems yet.</div>'; return; }
-    wrap.innerHTML = groups.map((g,i)=>{
-      const [topic, arr] = g;
-      const items = arr.filter(p=> filter==='all' || (filter==='solved'?p.solved:!p.solved))
-        .map(p=> `<div class='d-flex align-items-center justify-content-between py-1'>
-          <div class='flex-grow-1'><input type='checkbox' data-action='toggle-topicprob' data-id='${p.id}' ${p.solved?'checked':''} class='form-check-input me-2'>
-            <a href='${p.link}' target='_blank' rel='noopener' class='me-2'>${escapeHtml(p.name||'Untitled')}</a>
-            <span class='badge ${p.solved?'badge-solved':'badge-unsolved'}'>${p.solved?'Solved':'Todo'}</span>
-          </div>
-          <div class='btn-group btn-group-sm'>
-            <button class='btn btn-outline-secondary' data-action='edit-topicprob' data-id='${p.id}'>Edit</button>
-            <button class='btn btn-outline-danger' data-action='delete-topicprob' data-id='${p.id}'>Del</button>
-          </div>
-        </div>`).join('');
-      if(!items) return '';
-      return `<div class='accordion-item'>
-        <h2 class='accordion-header'>
-          <button class='accordion-button collapsed' type='button' data-bs-toggle='collapse' data-bs-target='#tp${i}'>${escapeHtml(topic)}</button>
-        </h2>
-        <div id='tp${i}' class='accordion-collapse collapse'>
-          <div class='accordion-body p-2'>${items||'<em>Empty</em>'}</div>
-        </div>
-      </div>`;
-    }).join('');
-  }
+  // Topic problems feature removed
 
   function render4WeekTopics(){
     const wrap = byId('topics4WeeksContainer'); if(!wrap) return;
@@ -482,7 +443,7 @@
       if((obj[nameField]||'').toLowerCase().includes(query)) results.push({type,...obj});
     };
     state.nextMonthRating.forEach(p=> pushMatch('rating', p));
-    state.nextMonthTopic.forEach(p=> pushMatch('topicProblem', p));
+  // topic problems removed
     state.topics4Weeks.forEach(p=> pushMatch('fourWeek', p, 'topic'));
     state.upsolve.forEach(p=> pushMatch('upsolve', p));
     const wrap = byId('searchResultsContainer'); wrap.innerHTML = results.map(r=> `<div class='col-12 col-md-6'>
@@ -562,40 +523,7 @@
       refreshStats();
     });
   }
-  function addOrEditTopicProblem(existing){
-    const m = openModal(existing? 'Edit Topic Problem':'Add Topic Problem', `
-      <form id='topicProbForm'>
-        <div class='mb-2'>
-          <label class='form-label'>Name</label>
-          <input type='text' name='name' class='form-control' value='${escapeHtml(existing?.name||'')}' />
-        </div>
-        <div class='mb-2'>
-          <label class='form-label'>Link *</label>
-          <input required type='url' name='link' class='form-control' value='${escapeHtml(existing?.link||'')}' />
-        </div>
-        <div class='mb-2'>
-          <label class='form-label'>Topic</label>
-          <input type='text' name='topic' class='form-control' value='${escapeHtml(existing?.topic||'')}' placeholder='DP, Graphs, ...' />
-        </div>
-        <div class='mb-2'>
-          <label class='form-label'>Notes</label>
-          <textarea name='notes' class='form-control' rows='2'>${escapeHtml(existing?.notes||'')}</textarea>
-        </div>
-      </form>
-    `, (modal)=>{
-      const form = modal.querySelector('#topicProbForm');
-      if(!form.reportValidity()) return false;
-      const fd = new FormData(form);
-      if(existing){
-        Object.assign(existing, Object.fromEntries(fd.entries()));
-      } else {
-        state.nextMonthTopic.push({ id: uid(), solved:false, ...Object.fromEntries(fd.entries()) });
-      }
-      saveState();
-      renderTopicProblems();
-      refreshStats();
-    });
-  }
+  // Topic problem add/edit removed
 
   // Event Delegation
   document.addEventListener('click', (e)=>{
@@ -624,10 +552,12 @@
         const item = state.nextMonthRating.find(p=>p.id===id); if(item) addOrEditRatingProblem(item);
       } else if(action==='delete-rating'){
         state.nextMonthRating = state.nextMonthRating.filter(p=>p.id!==id); saveState(); renderRatingProblems(); refreshStats();
-      } else if(action==='edit-topicprob'){
-        const item = state.nextMonthTopic.find(p=>p.id===id); if(item) addOrEditTopicProblem(item);
-      } else if(action==='delete-topicprob'){
-        state.nextMonthTopic = state.nextMonthTopic.filter(p=>p.id!==id); saveState(); renderTopicProblems(); refreshStats();
+      } else if(action==='quick-add-rating') {
+        addOrEditRatingProblem();
+      } else if(action==='quick-add-revision') {
+        open4WeekTopicModal();
+      } else if(action==='quick-add-upsolve') {
+        openUpsolveModal();
       } else if(action==='edit-4week'){
         const item = state.topics4Weeks.find(p=>p.id===id); if(item) open4WeekTopicModal(item);
       } else if(action==='delete-4week'){
@@ -642,7 +572,7 @@
   document.addEventListener('change', (e)=>{
     if(e.target.id==='darkModeToggle') toggleTheme();
     if(e.target.id==='ratingFilter') renderRatingProblems();
-    if(e.target.id==='topicFilter') renderTopicProblems();
+  // topic filter removed
     if(e.target.id==='upsolveFilter') renderUpsolve();
     if(e.target.classList.contains('topic-status-select')){
       const id = e.target.getAttribute('data-id');
@@ -650,11 +580,11 @@
       if(item){ item.status = e.target.value; saveState(); refreshStats(); }
     }
     if(e.target.matches('[data-action="toggle-rating"]')){ const item = state.nextMonthRating.find(p=>p.id===e.target.dataset.id); if(item){ item.solved = e.target.checked; saveState(); renderRatingProblems(); }}
-    if(e.target.matches('[data-action="toggle-topicprob"]')){ const item = state.nextMonthTopic.find(p=>p.id===e.target.dataset.id); if(item){ item.solved = e.target.checked; saveState(); renderTopicProblems(); }}
+  // topic toggle removed
     if(e.target.matches('[data-action="toggle-upsolve"]')){ const item = state.upsolve.find(p=>p.id===e.target.dataset.id); if(item){ item.solved = e.target.checked; saveState(); renderUpsolve(); }}
   });
   byId('addRatingProblemBtn').addEventListener('click', ()=> addOrEditRatingProblem());
-  byId('addTopicProblemBtn').addEventListener('click', ()=> addOrEditTopicProblem());
+  // addTopicProblemBtn removed from DOM
   byId('add4WeekTopicBtn').addEventListener('click', ()=> open4WeekTopicModal());
   byId('addUpsolveBtn').addEventListener('click', ()=> openUpsolveModal());
   const accentPicker = byId('accentColorPicker');
@@ -706,14 +636,12 @@
   function buildPaletteActions(){
     return [
       { title:'Go: Dashboard', desc:'Show overall progress', keywords:['dash','home'], run:()=> showSection('dashboard'), icon:'🏠' },
-      { title:'Go: Rating Problems', desc:'Next Month rating tab', keywords:['rating','next'], run:()=>{ showSection('next-month'); new bootstrap.Tab(byId('rating-tab')).show(); }, icon:'📊' },
-      { title:'Go: Topic Problems', desc:'Next Month topic tab', keywords:['topic'], run:()=>{ showSection('next-month'); new bootstrap.Tab(byId('topic-tab')).show(); }, icon:'🧩' },
-      { title:'Go: 4 Week Topics', desc:'Study schedule', keywords:['4w','topics'], run:()=> showSection('topics-4-weeks'), icon:'🗂️' },
+  { title:'Go: New Problems', desc:'Problem list', keywords:['rating','new','problems'], run:()=>{ showSection('next-month'); }, icon:'📊' },
+  { title:'Go: Revision', desc:'Revision topics', keywords:['revision','topics'], run:()=> showSection('topics-4-weeks'), icon:'🗂️' },
       { title:'Go: Upsolve', desc:'Pending contest problems', keywords:['upsolve','contest'], run:()=> showSection('upsolve'), icon:'♻️' },
       { title:'Go: Calendar', desc:'Activity calendar', keywords:['calendar','schedule'], run:()=> showSection('calendar'), icon:'🗓️' },
-      { title:'Add: Rating Problem', desc:'Quick add form', keywords:['add','rating'], run:()=> addOrEditRatingProblem(), icon:'➕' },
-      { title:'Add: Topic Problem', desc:'Quick add form', keywords:['add','topic'], run:()=> addOrEditTopicProblem(), icon:'➕' },
-      { title:'Add: 4 Week Topic', desc:'Plan study block', keywords:['add','4w'], run:()=> open4WeekTopicModal(), icon:'➕' },
+  { title:'Add: New Problem', desc:'Quick add form', keywords:['add','rating','problem'], run:()=> addOrEditRatingProblem(), icon:'➕' },
+  { title:'Add: Revision Topic', desc:'Plan study block', keywords:['add','revision'], run:()=> open4WeekTopicModal(), icon:'➕' },
       { title:'Add: Upsolve Entry', desc:'Add problem or contest', keywords:['add','upsolve'], run:()=> openUpsolveModal(), icon:'➕' },
       { title:'Open Analytics', desc:'View breakdown', keywords:['analytics','stats'], run:()=> openAnalytics(), icon:'📈' }
     ];
@@ -761,7 +689,7 @@
     const styleEl = document.createElement('style'); styleEl.id='dynamicEnhanceStyles'; styleEl.textContent = css; document.head.appendChild(styleEl);
   }
 
-  function renderAll(){ refreshStats(); renderRatingProblems(); renderTopicProblems(); render4WeekTopics(); renderUpsolve(); renderCalendar(); }
+  function renderAll(){ refreshStats(); renderRatingProblems(); render4WeekTopics(); renderUpsolve(); renderCalendar(); }
 
   // Initial enhancements after existing content loaded
   initTheme();

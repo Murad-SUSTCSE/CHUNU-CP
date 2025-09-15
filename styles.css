@@ -169,6 +169,9 @@ button, .btn { border-radius: calc(var(--radius) - 4px) !important; }
 
 /* New Header & Side Menu (appended) */
 .app-header {display:flex;justify-content:space-between;align-items:flex-end;padding:1.8rem 2.2rem 1rem;position:relative;z-index:30;background:linear-gradient(to bottom, rgba(7,17,29,.9), rgba(7,17,29,.55), rgba(7,17,29,0));backdrop-filter:blur(8px);}
+.centered-header {flex-direction:column;align-items:center;justify-content:center;text-align:center;}
+.centered-header .header-actions {order:2;}
+.centered-header .brand-block {order:1;}
 .brand-block {max-width:60%;}
 .cf-handle {margin:0;font-size:clamp(2.8rem,6vw,4.8rem);line-height:.9;font-weight:800;letter-spacing:-2px;background:linear-gradient(95deg,#ffffff,#e3f4ff,#9edfff 60%,#53bfff 85%);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 6px 28px rgba(79,141,255,.45));}
 .subtitle {margin:.6rem 0 0;font-size:.85rem;letter-spacing:4px;text-transform:uppercase;font-weight:600;color:var(--text-muted);opacity:.9;}

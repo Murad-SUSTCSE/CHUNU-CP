@@ -12,12 +12,12 @@
 </head>
 <body class="bg-body text-body">
 <div class="noise-layer"></div>
-<header class="app-header">
-  <div class="brand-block">
+<header class="app-header centered-header">
+  <div class="brand-block text-center mx-auto">
     <h1 class="cf-handle" aria-label="Codeforces Handle">-CHUNU-</h1>
     <p class="subtitle">Competitive Programming Tracker</p>
   </div>
-  <div class="header-actions">
+  <div class="header-actions justify-content-center w-100 mt-3">
     <div class="search-wrap">
       <input id="globalSearch" type="search" placeholder="Search..." aria-label="Search" />
     </div>
@@ -31,7 +31,6 @@
     <div class="menu-group">
       <h6 class="menu-title">Quick Add</h6>
       <button class="btn btn-primary w-100 mb-2" id="addRatingProblemBtn">Add Rating Problem</button>
-      <button class="btn btn-primary w-100 mb-2" id="addTopicProblemBtn">Add Topic Problem</button>
       <button class="btn btn-primary w-100 mb-2" id="add4WeekTopicBtn">Add 4W Topic</button>
       <button class="btn btn-primary w-100 mb-3" id="addUpsolveBtn">Add Upsolve</button>
     </div>
@@ -48,8 +47,8 @@
     <div class="menu-group links">
       <h6 class="menu-title">Sections</h6>
       <a href="#section-dashboard" class="menu-link">Dashboard</a>
-      <a href="#section-next-month" class="menu-link">Next Month Problems</a>
-      <a href="#section-topics-4-weeks" class="menu-link">4 Week Topics</a>
+  <a href="#section-next-month" class="menu-link">New Problems</a>
+  <a href="#section-topics-4-weeks" class="menu-link">Revision</a>
       <a href="#section-upsolve" class="menu-link">Upsolve</a>
       <a href="#section-calendar" class="menu-link">Calendar</a>
       <a href="#section-search-results" class="menu-link">Search Results</a>
@@ -77,30 +76,23 @@
         </div>
       <div class="card shadow-sm" data-wide="true">
           <div class="card-body">
-            <h5 class="card-title">Rating Problems</h5>
+            <h5 class="card-title">New Problems</h5>
             <p id="dashRatingCounts" class="mb-2 small text-muted">--</p>
-            <button class="btn btn-sm btn-primary glow-hover" data-section-jump="next-month" data-tab="rating">Add</button>
+            <button class="btn btn-sm btn-primary glow-hover" data-action="quick-add-rating">Add</button>
           </div>
         </div>
       <div class="card shadow-sm">
           <div class="card-body">
-            <h5 class="card-title">Topic Problems</h5>
-            <p id="dashTopicCounts" class="mb-2 small text-muted">--</p>
-            <button class="btn btn-sm btn-primary glow-hover" data-section-jump="next-month" data-tab="topic">Add</button>
-          </div>
-        </div>
-      <div class="card shadow-sm">
-          <div class="card-body">
-            <h5 class="card-title">4 Week Topics</h5>
+            <h5 class="card-title">Revision</h5>
             <p id="dash4WeekCounts" class="mb-2 small text-muted">--</p>
-            <button class="btn btn-sm btn-primary glow-hover" data-section-jump="topics-4-weeks">Add</button>
+            <button class="btn btn-sm btn-primary glow-hover" data-action="quick-add-revision">Add</button>
           </div>
         </div>
       <div class="card shadow-sm">
           <div class="card-body">
             <h5 class="card-title">Upsolve</h5>
             <p id="dashUpsolveCounts" class="mb-2 small text-muted">--</p>
-            <button class="btn btn-sm btn-primary glow-hover" data-section-jump="upsolve">Add</button>
+            <button class="btn btn-sm btn-primary glow-hover" data-action="quick-add-upsolve">Add</button>
           </div>
         </div>
     </div>
@@ -108,48 +100,26 @@
 
   <!-- Next Month -->
   <section id="section-next-month" class="app-section d-none">
-    <ul class="nav nav-tabs" id="nextMonthTabs" role="tablist">
-      <li class="nav-item" role="presentation">
-        <button class="nav-link active" id="rating-tab" data-bs-toggle="tab" data-bs-target="#ratingPane" type="button" role="tab">Rating-wise</button>
-      </li>
-      <li class="nav-item" role="presentation">
-        <button class="nav-link" id="topic-tab" data-bs-toggle="tab" data-bs-target="#topicPane" type="button" role="tab">Topic-wise</button>
-      </li>
-    </ul>
-    <div class="tab-content pt-3">
-      <div class="tab-pane fade show active" id="ratingPane" role="tabpanel">
-        <div class="d-flex justify-content-between mb-2">
-          <div>
-            <button class="btn btn-sm btn-success glow-hover" id="addRatingProblemBtn">Add Problem</button>
-          </div>
-          <div class="d-flex gap-2">
-            <select id="ratingFilter" class="form-select form-select-sm" style="width:auto;">
-              <option value="all">All</option>
-              <option value="unsolved">Unsolved</option>
-              <option value="solved">Solved</option>
-            </select>
-          </div>
-        </div>
-        <div id="ratingProblemsContainer" class="accordion"></div>
+    <h5 class="text-center mb-3">New Problems</h5>
+    <div class="d-flex justify-content-between mb-2">
+      <div>
+        <button class="btn btn-sm btn-success glow-hover" id="addRatingProblemBtn">Add Problem</button>
       </div>
-      <div class="tab-pane fade" id="topicPane" role="tabpanel">
-        <div class="d-flex justify-content-between mb-2">
-          <button class="btn btn-sm btn-success glow-hover" id="addTopicProblemBtn">Add Topic Problem</button>
-          <select id="topicFilter" class="form-select form-select-sm" style="width:auto;">
-            <option value="all">All</option>
-            <option value="unsolved">Unsolved</option>
-            <option value="solved">Solved</option>
-          </select>
-        </div>
-        <div id="topicProblemsContainer" class="accordion"></div>
+      <div class="d-flex gap-2">
+        <select id="ratingFilter" class="form-select form-select-sm" style="width:auto;">
+          <option value="all">All</option>
+          <option value="unsolved">Unsolved</option>
+          <option value="solved">Solved</option>
+        </select>
       </div>
     </div>
+    <div id="ratingProblemsContainer" class="accordion"></div>
   </section>
 
   <!-- 4 Week Topics -->
   <section id="section-topics-4-weeks" class="app-section d-none">
     <div class="d-flex justify-content-between mb-2">
-  <button class="btn btn-sm btn-success glow-hover" id="add4WeekTopicBtn">Add Topic</button>
+  <button class="btn btn-sm btn-success glow-hover" id="add4WeekTopicBtn">Add Revision Item</button>
     </div>
     <div id="topics4WeeksContainer" class="list-group"></div>
   </section>
