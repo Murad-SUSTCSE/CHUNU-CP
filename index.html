@@ -28,22 +28,6 @@
 <aside id="sideMenu" class="side-menu hidden" aria-hidden="true">
   <div class="side-menu-inner">
     <button class="close-menu" id="closeMenuBtn" aria-label="Close menu">&times;</button>
-    <div class="menu-group">
-      <h6 class="menu-title">Quick Add</h6>
-      <button class="btn btn-primary w-100 mb-2" id="addRatingProblemBtn">Add Rating Problem</button>
-      <button class="btn btn-primary w-100 mb-2" id="add4WeekTopicBtn">Add 4W Topic</button>
-      <button class="btn btn-primary w-100 mb-3" id="addUpsolveBtn">Add Upsolve</button>
-    </div>
-    <div class="menu-group">
-      <h6 class="menu-title">Data</h6>
-      <button class="btn btn-outline-light w-100 mb-2" id="exportDataBtn">Export Data</button>
-      <label class="btn btn-outline-light w-100 mb-2" for="importDataInput">Import Data</label>
-      <input type="file" id="importDataInput" accept="application/json" hidden />
-    </div>
-    <div class="menu-group">
-      <h6 class="menu-title">Appearance</h6>
-      <input type="color" id="accentColorPicker" title="Accent color" class="form-control form-control-color mb-3" value="#3fa9ff" />
-    </div>
     <div class="menu-group links">
       <h6 class="menu-title">Sections</h6>
     <a href="#" data-section="dashboard" class="menu-link">Dashboard</a>
@@ -80,6 +64,13 @@
             <h5 class="card-title">New Problems</h5>
             <p id="dashRatingCounts" class="mb-2 small text-muted">--</p>
             <button class="btn btn-sm btn-primary glow-hover" data-action="quick-add-rating">Add</button>
+          </div>
+        </div>
+      <div class="card shadow-sm">
+          <div class="card-body">
+            <h5 class="card-title">All Problems</h5>
+            <p id="dashAllProblemsCounts" class="mb-2 small text-muted">--</p>
+            <button class="btn btn-sm btn-outline-primary glow-hover" data-section="all-problems">Open</button>
           </div>
         </div>
       <div class="card shadow-sm">

@@ -38,7 +38,24 @@
   }
   window.addEventListener('popstate', ()=>{ const sec=(location.hash||'').replace('#','')||'dashboard'; showSection(sec,true); });
 
-  function refreshStats(){ const total= state.nextMonthRating.length + state.nextMonthTopic.length + state.upsolve.length; const sr= state.nextMonthRating.filter(p=>p.solved).length; const st= state.nextMonthTopic.filter(p=>p.solved).length; const su= state.upsolve.filter(p=>p.solved).length; const solved= sr+st+su; const pct = total? Math.round(solved/total*100):0; byId('overallSummary').textContent = `${solved}/${total} solved (${pct}%)`; byId('dashRatingCounts').textContent=`${sr}/${state.nextMonthRating.length} solved`; const dashUps = byId('dashUpsolveCounts'); if(dashUps) dashUps.textContent=`${su}/${state.upsolve.length} solved`; const topicsCompleted = state.topics4Weeks.filter(t=>t.status==='completed').length; const dash4 = byId('dash4WeekCounts'); if(dash4) dash4.textContent = `${topicsCompleted}/${state.topics4Weeks.length} completed`; animateDonut(pct, solved, total); }
+  function refreshStats(){
+    const total= state.nextMonthRating.length + state.nextMonthTopic.length + state.upsolve.length;
+    const sr= state.nextMonthRating.filter(p=>p.solved).length;
+    const st= state.nextMonthTopic.filter(p=>p.solved).length;
+    const su= state.upsolve.filter(p=>p.solved).length;
+    const solved= sr+st+su;
+    const pct = total? Math.round(solved/total*100):0;
+    byId('overallSummary').textContent = `${solved}/${total} solved (${pct}%)`;
+    byId('dashRatingCounts').textContent=`${sr}/${state.nextMonthRating.length} solved`;
+    const dashUps = byId('dashUpsolveCounts'); if(dashUps) dashUps.textContent=`${su}/${state.upsolve.length} solved`;
+    const topicsCompleted = state.topics4Weeks.filter(t=>t.status==='completed').length;
+    const dash4 = byId('dash4WeekCounts'); if(dash4) dash4.textContent = `${topicsCompleted}/${state.topics4Weeks.length} completed`;
+    const allCountsEl = byId('dashAllProblemsCounts');
+    if(allCountsEl){
+      allCountsEl.textContent = `${solved}/${total} solved`; // mirrors overall but scoped to problems
+    }
+    animateDonut(pct, solved, total);
+  }
 
   // Animated donut
   let donutAnimating=false; function animateDonut(targetPct, solved, total){ const canvas=byId('progressDonut'); if(!canvas) return; const ctx=canvas.getContext('2d'); const w = canvas.width = canvas.clientWidth || 140; const h = canvas.height = 140; const cx=w/2, cy=h/2, r=Math.min(w,h)/2-10; const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#0d6efd'; const border = getComputedStyle(document.documentElement).getPropertyValue('--border').trim()||'#334'; let start=null; const duration=900; donutAnimating=true; function frame(ts){ if(!start) start=ts; const t=(ts-start)/duration; const ease = t<1? (1- Math.pow(1-t,3)):1; const pct = Math.round(targetPct*ease); ctx.clearRect(0,0,w,h); ctx.lineWidth=18; ctx.strokeStyle=border; ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.stroke(); const end = (pct/100)*Math.PI*2 - Math.PI/2; ctx.strokeStyle=accent; ctx.lineCap='round'; ctx.beginPath(); ctx.arc(cx,cy,r,-Math.PI/2,end); ctx.stroke(); ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--text'); ctx.font='bold 18px system-ui,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(pct+'%', cx, cy-4); ctx.font='12px system-ui,sans-serif'; ctx.fillText(`${solved}/${total}`, cx, cy+14); if(ease<1) requestAnimationFrame(frame); else donutAnimating=false; } requestAnimationFrame(frame); }
@@ -596,6 +613,13 @@
     m.querySelector('#problemTypeSelect').addEventListener('change', updateFields);
     updateFields();
   }
+  // Wrapper helpers for legacy calls (dashboard buttons, palette entries, existing edit handlers)
+  function addOrEditRatingProblem(existing){
+    addOrEditProblemUnified(existing, 'rating');
+  }
+  function addOrEditTopicProblem(existing){
+    addOrEditProblemUnified(existing, 'topic');
+  }
   // Topic problem add/edit removed
 
   // Event Delegation
@@ -627,6 +651,10 @@
         state.nextMonthRating = state.nextMonthRating.filter(p=>p.id!==id); saveState(); renderRatingProblems(); refreshStats();
       } else if(action==='quick-add-rating') {
         addOrEditRatingProblem();
+      } else if(action==='edit-topicprob') {
+        const item = state.nextMonthTopic.find(p=>p.id===id); if(item) addOrEditTopicProblem(item);
+      } else if(action==='delete-topicprob') {
+        state.nextMonthTopic = state.nextMonthTopic.filter(p=>p.id!==id); saveState(); renderTopicProblems(); refreshStats();
       } else if(action==='quick-add-revision') {
         open4WeekTopicModal();
       } else if(action==='quick-add-upsolve') {
@@ -643,6 +671,8 @@
         state.nextMonthRating = state.nextMonthRating.filter(p=>p.id!==id); saveState(); renderAllProblems(); renderRatingProblems(); refreshStats();
       } else if(action==='delete-ap-topic'){
         state.nextMonthTopic = state.nextMonthTopic.filter(p=>p.id!==id); saveState(); renderAllProblems(); renderTopicProblems(); refreshStats();
+      } else if(action==='delete-ap-upsolve'){
+        state.upsolve = state.upsolve.filter(p=>p.id!==id); saveState(); renderAllProblems(); renderUpsolve(); refreshStats();
       }
     }
   });
@@ -661,20 +691,31 @@
     if(e.target.matches('[data-action="toggle-upsolve"]')){ const item = state.upsolve.find(p=>p.id===e.target.dataset.id); if(item){ item.solved = e.target.checked; saveState(); renderUpsolve(); }}
   if(e.target.matches('[data-action="toggle-ap-rating"]')){ const item = state.nextMonthRating.find(p=>p.id===e.target.dataset.id); if(item){ item.solved = e.target.checked; saveState(); renderAllProblems(); renderRatingProblems(); }}
   if(e.target.matches('[data-action="toggle-ap-topic"]')){ const item = state.nextMonthTopic.find(p=>p.id===e.target.dataset.id); if(item){ item.solved = e.target.checked; saveState(); renderAllProblems(); renderTopicProblems(); }}
+  if(e.target.matches('[data-action="toggle-ap-upsolve"]')){ const item = state.upsolve.find(p=>p.id===e.target.dataset.id); if(item){ item.solved = e.target.checked; saveState(); renderAllProblems(); renderUpsolve(); }}
+  if(e.target.matches('[data-action="toggle-ap-contest-problem"]')){
+    // id format parentId:index
+    const [parentId, idxStr] = e.target.dataset.id.split(':');
+    const parent = state.upsolve.find(p=>p.id===parentId);
+    const idx = parseInt(idxStr,10);
+    if(parent && parent.problems && parent.problems[idx]){
+      parent.problems[idx].solved = e.target.checked;
+      saveState(); renderAllProblems(); renderUpsolve();
+    }
+  }
   });
   byId('addProblemUnifiedBtn')?.addEventListener('click', ()=> addOrEditProblemUnified());
-  byId('add4WeekTopicBtn').addEventListener('click', ()=> open4WeekTopicModal());
-  byId('addUpsolveBtn').addEventListener('click', ()=> openUpsolveModal());
+  byId('add4WeekTopicBtn')?.addEventListener('click', ()=> open4WeekTopicModal());
+  byId('addUpsolveBtn')?.addEventListener('click', ()=> openUpsolveModal());
   const accentPicker = byId('accentColorPicker');
   if(accentPicker){
     accentPicker.addEventListener('input', (e)=>{
-      const val = e.target.value; localStorage.setItem(ACCENT_KEY, val); applyAccent(val); drawDonut(0,0,0); refreshStats();
+      const val = e.target.value; localStorage.setItem(ACCENT_KEY, val); applyAccent(val); refreshStats();
     });
   }
-  byId('openAnalyticsBtn').addEventListener('click', openAnalytics);
-  byId('globalSearch').addEventListener('input', (e)=> globalSearch(e.target.value));
+  byId('openAnalyticsBtn')?.addEventListener('click', openAnalytics);
+  byId('globalSearch')?.addEventListener('input', (e)=> globalSearch(e.target.value));
   // High contrast toggle removed
-  byId('exportDataBtn').addEventListener('click', ()=>{
+  byId('exportDataBtn')?.addEventListener('click', ()=>{
     const blob = new Blob([JSON.stringify(state,null,2)], {type:'application/json'});
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -682,7 +723,7 @@
     a.click();
     URL.revokeObjectURL(a.href);
   });
-  byId('importDataInput').addEventListener('change', (e)=>{
+  byId('importDataInput')?.addEventListener('change', (e)=>{
     const file = e.target.files[0]; if(!file) return;
     const reader = new FileReader();
     reader.onload = ()=>{ try { const data = JSON.parse(reader.result); state = { ...defaultData, ...data }; saveState(); renderAll(); } catch(err){ alert('Invalid file'); } };
@@ -719,7 +760,7 @@
       { title:'Go: Upsolve', desc:'Pending contest problems', keywords:['upsolve','contest'], run:()=> showSection('upsolve'), icon:'♻️' },
       { title:'Go: Calendar', desc:'Activity calendar', keywords:['calendar','schedule'], run:()=> showSection('calendar'), icon:'🗓️' },
       { title:'Go: All Problems', desc:'All problems aggregated', keywords:['all','aggregate','problems'], run:()=> showSection('all-problems'), icon:'🗃️' },
-  { title:'Add: New Problem', desc:'Quick add form', keywords:['add','rating','problem'], run:()=> addOrEditRatingProblem(), icon:'➕' },
+  { title:'Add: New Problem', desc:'Quick add form', keywords:['add','rating','problem'], run:()=> addOrEditProblemUnified(), icon:'➕' },
   { title:'Add: Topic Block', desc:'Plan study block', keywords:['add','topic','block'], run:()=> open4WeekTopicModal(), icon:'➕' },
       { title:'Add: Upsolve Entry', desc:'Add problem or contest', keywords:['add','upsolve'], run:()=> openUpsolveModal(), icon:'➕' },
       { title:'Open Analytics', desc:'View breakdown', keywords:['analytics','stats'], run:()=> openAnalytics(), icon:'📈' }
@@ -841,11 +882,11 @@
   state.nextMonthTopic.forEach(p=>{ if(filter==='all' || (filter==='solved'?p.solved:!p.solved)) push(p.topic||'General', { id:p.id, type:'topic', name:p.name||'Untitled', link:p.link, solved:p.solved }); });
     state.upsolve.forEach(u=>{
       if(u.kind==='problem'){
-        if(filter==='all' || (filter==='solved'?u.solved:!u.solved)) push('Upsolve', { name:u.name||'Untitled', link:u.link, solved:u.solved });
+        if(filter==='all' || (filter==='solved'?u.solved:!u.solved)) push('Upsolve', { id:u.id, type:'upsolve', name:u.name||'Untitled', link:u.link, solved:u.solved });
       } else if(u.kind==='contest') {
         const key = u.platform? u.platform+' Contest': 'Contest';
         if(u.problems && u.problems.length){
-          u.problems.forEach(ch=>{ if(filter==='all' || (filter==='solved'?ch.solved:!ch.solved)) push(key, { name:(u.name? u.name+': ':'')+(ch.name||'Problem'), link:ch.link, solved:ch.solved }); });
+          u.problems.forEach((ch,idx)=>{ if(filter==='all' || (filter==='solved'?ch.solved:!ch.solved)) push(key, { id:u.id+':'+idx, parent:u.id, type:'contest-problem', name:(u.name? u.name+': ':'')+(ch.name||'Problem'), link:ch.link, solved:ch.solved }); });
         }
       }
     });
@@ -859,7 +900,7 @@
             <span class='badge ${p.solved?'badge-solved':'badge-unsolved'}'>${p.solved?'Solved':'Todo'}</span>
           </div>
           <div class='btn-group btn-group-sm'>
-            <button class='btn btn-outline-danger' data-action='delete-ap-${p.type}' data-id='${p.id}'>Del</button>
+            ${p.type!=='contest-problem'? `<button class='btn btn-outline-danger' data-action='delete-ap-${p.type}' data-id='${p.id}'>Del</button>`:''}
           </div>
         </div>`).join('');
       return `<div class='accordion-item'>
