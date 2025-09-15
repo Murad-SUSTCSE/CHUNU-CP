@@ -29,7 +29,7 @@
     const target = byId('section-'+key);
     if(target) target.scrollTop = 0;
     if(key==='dashboard') refreshStats();
-  if(key==='next-month'){ renderRatingProblems(); }
+  if(key==='next-month'){ renderUnifiedProblems(); }
     if(key==='topics-4-weeks') render4WeekTopics();
     if(key==='upsolve') renderUpsolve();
     if(key==='calendar') renderCalendar();
@@ -164,6 +164,46 @@
     const map = {};
     state.nextMonthTopic.forEach(p=>{ const key = (p.topic||'General').trim(); map[key]=map[key]||[]; map[key].push(p); });
     return Object.entries(map).sort((a,b)=> a[0].localeCompare(b[0]));
+  // Unified problems rendering
+  function renderUnifiedProblems(){
+    const wrap = byId('unifiedProblemsContainer'); if(!wrap) return;
+    const filterSel = byId('unifiedProblemsFilter');
+    const filter = filterSel? filterSel.value : 'all';
+    // Build combined array with group key and items
+    const ratingGroups = groupRatings().map(([bucket, arr])=> ({ label: bucket, kind:'rating', items: arr }));
+    const topicGroups = groupTopics().map(([topic, arr])=> ({ label: topic, kind:'topic', items: arr }));
+    let groups = [...ratingGroups, ...topicGroups];
+    if(filter==='rating') groups = groups.filter(g=> g.kind==='rating');
+    else if(filter==='topic') groups = groups.filter(g=> g.kind==='topic');
+    const applyItemFilter = p=> filter==='all' || filter==='rating' || filter==='topic' || (filter==='solved'? p.solved : (filter==='unsolved'? !p.solved : true));
+    const solveFilterActive = filter==='solved' || filter==='unsolved';
+    // If filtering by solved/unsolved, trim items accordingly
+    const html = groups.map((g,i)=>{
+      const items = g.items.filter(applyItemFilter);
+      if(!items.length) return '';
+      const inner = items.map(p=> `<div class='d-flex align-items-center justify-content-between py-1'>
+          <div class='flex-grow-1'>
+            <input type='checkbox' data-action='toggle-unified' data-kind='${g.kind}' data-id='${p.id}' ${p.solved?'checked':''} class='form-check-input me-2'>
+            <a href='${p.link}' target='_blank' rel='noopener' class='me-2'>${escapeHtml(p.name||'Untitled')}</a>
+            <span class='badge ${p.solved?'badge-solved':'badge-unsolved'}'>${p.solved?'Solved':'Todo'}</span>
+            ${g.kind==='rating'? `<small class='text-muted ms-2'>${p.rating||'-'}</small>`: `<small class='text-muted ms-2'>${escapeHtml(p.topic||'')}</small>`}
+          </div>
+          <div class='btn-group btn-group-sm'>
+            <button class='btn btn-outline-secondary' data-action='edit-unified' data-kind='${g.kind}' data-id='${p.id}'>Edit</button>
+            <button class='btn btn-outline-danger' data-action='delete-unified' data-kind='${g.kind}' data-id='${p.id}'>Del</button>
+          </div>
+        </div>`).join('');
+      return `<div class='accordion-item'>
+        <h2 class='accordion-header'>
+          <button class='accordion-button collapsed' type='button' data-bs-toggle='collapse' data-bs-target='#un${i}'>${escapeHtml(g.label)} <span class='badge bg-secondary ms-2'>${g.items.filter(p=>p.solved).length}/${g.items.length}</span></button>
+        </h2>
+        <div id='un${i}' class='accordion-collapse collapse'>
+          <div class='accordion-body p-2'>${inner||'<em>Empty</em>'}</div>
+        </div>
+      </div>`;
+    }).join('');
+    wrap.innerHTML = html || '<div class="placeholder-empty p-3">No problems yet.</div>';
+  }
   }
   function renderTopicProblems(){
     const wrap = byId('topicProblemsContainer'); if(!wrap) return;
@@ -676,6 +716,15 @@
         state.upsolve = state.upsolve.filter(p=>p.id!==id); saveState(); renderUpsolve(); refreshStats();
       } else if(action==='delete-ap-rating'){
         state.nextMonthRating = state.nextMonthRating.filter(p=>p.id!==id); saveState(); renderAllProblems(); renderRatingProblems(); refreshStats();
+      } else if(action==='edit-unified') {
+        const kind = actionBtn.getAttribute('data-kind');
+        if(kind==='rating'){ const item = state.nextMonthRating.find(p=>p.id===id); if(item) addOrEditRatingProblem(item); }
+        else { const item = state.nextMonthTopic.find(p=>p.id===id); if(item) addOrEditTopicProblem(item); }
+      } else if(action==='delete-unified') {
+        const kind = actionBtn.getAttribute('data-kind');
+        if(kind==='rating'){ state.nextMonthRating = state.nextMonthRating.filter(p=>p.id!==id); }
+        else { state.nextMonthTopic = state.nextMonthTopic.filter(p=>p.id!==id); }
+        saveState(); renderUnifiedProblems(); refreshStats();
       } else if(action==='delete-ap-topic'){
         state.nextMonthTopic = state.nextMonthTopic.filter(p=>p.id!==id); saveState(); renderAllProblems(); renderTopicProblems(); refreshStats();
       } else if(action==='delete-ap-upsolve'){
@@ -685,19 +734,25 @@
   });
   document.addEventListener('change', (e)=>{
     if(e.target.id==='darkModeToggle') toggleTheme();
-    if(e.target.id==='ratingFilter') renderRatingProblems();
-  // topic filter removed
+    if(e.target.id==='unifiedProblemsFilter') renderUnifiedProblems();
     if(e.target.id==='upsolveFilter') renderUpsolve();
     if(e.target.classList.contains('topic-status-select')){
       const id = e.target.getAttribute('data-id');
       const item = state.topics4Weeks.find(t=>t.id===id);
       if(item){ item.status = e.target.value; saveState(); refreshStats(); }
     }
-    if(e.target.matches('[data-action="toggle-rating"]')){ const item = state.nextMonthRating.find(p=>p.id===e.target.dataset.id); if(item){ item.solved = e.target.checked; saveState(); renderRatingProblems(); renderTopicProblems(); renderAllProblems(); }}
-    if(e.target.matches('[data-action="toggle-topicprob"]')){ const item = state.nextMonthTopic.find(p=>p.id===e.target.dataset.id); if(item){ item.solved = e.target.checked; saveState(); renderTopicProblems(); renderRatingProblems(); renderAllProblems(); }}
-    if(e.target.matches('[data-action="toggle-upsolve"]')){ const item = state.upsolve.find(p=>p.id===e.target.dataset.id); if(item){ item.solved = e.target.checked; saveState(); renderUpsolve(); }}
-  if(e.target.matches('[data-action="toggle-ap-rating"]')){ const item = state.nextMonthRating.find(p=>p.id===e.target.dataset.id); if(item){ item.solved = e.target.checked; saveState(); renderAllProblems(); renderRatingProblems(); }}
-  if(e.target.matches('[data-action="toggle-ap-topic"]')){ const item = state.nextMonthTopic.find(p=>p.id===e.target.dataset.id); if(item){ item.solved = e.target.checked; saveState(); renderAllProblems(); renderTopicProblems(); }}
+    if(e.target.matches('[data-action="toggle-unified"]')){
+      const kind = e.target.getAttribute('data-kind');
+      const id = e.target.getAttribute('data-id');
+      const item = kind==='rating'? state.nextMonthRating.find(p=>p.id===id): state.nextMonthTopic.find(p=>p.id===id);
+      if(item){ item.solved = e.target.checked; saveState(); renderUnifiedProblems(); renderAllProblems(); }
+    }
+    if(e.target.matches('[data-action="toggle-upsolve"]')){
+      const item = state.upsolve.find(p=>p.id===e.target.dataset.id);
+      if(item){ item.solved = e.target.checked; saveState(); renderUpsolve(); }
+    }
+    if(e.target.matches('[data-action="toggle-ap-rating"]')){ const item = state.nextMonthRating.find(p=>p.id===e.target.dataset.id); if(item){ item.solved = e.target.checked; saveState(); renderAllProblems(); renderUnifiedProblems(); }}
+    if(e.target.matches('[data-action="toggle-ap-topic"]')){ const item = state.nextMonthTopic.find(p=>p.id===e.target.dataset.id); if(item){ item.solved = e.target.checked; saveState(); renderAllProblems(); renderUnifiedProblems(); }}
   if(e.target.matches('[data-action="toggle-ap-upsolve"]')){ const item = state.upsolve.find(p=>p.id===e.target.dataset.id); if(item){ item.solved = e.target.checked; saveState(); renderAllProblems(); renderUpsolve(); }}
   if(e.target.matches('[data-action="toggle-ap-contest-problem"]')){
     // id format parentId:index

@@ -62,9 +62,8 @@
       <div class="card shadow-sm" data-wide="true">
           <div class="card-body">
             <h5 class="card-title">New Problems</h5>
-            <p id="dashRatingCounts" class="mb-2 small text-muted">--</p>
-            <p id="dashTopicCounts" class="mb-2 small text-muted">--</p>
-            <button class="btn btn-sm btn-primary glow-hover" data-action="quick-add-rating">Add</button>
+            <p id="dashNewProblemsSummary" class="mb-2 small text-muted">--</p>
+            <button class="btn btn-sm btn-primary glow-hover" id="addProblemUnifiedBtnDash" data-action="quick-add-rating">Add</button>
           </div>
         </div>
       <div class="card shadow-sm">
@@ -95,21 +94,18 @@
   <section id="section-next-month" class="app-section d-none">
     <h5 class="text-center mb-3">New Problems</h5>
     <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between mb-2">
-      <div class="btn-group btn-group-sm" role="group" aria-label="Problem list mode">
-        <button class="btn btn-outline-primary active" id="modeRatingListBtn">Rating</button>
-        <button class="btn btn-outline-primary" id="modeTopicListBtn">Topic</button>
-      </div>
       <div class="d-flex gap-2 ms-auto">
-        <select id="ratingFilter" class="form-select form-select-sm" style="width:auto;">
+        <select id="unifiedProblemsFilter" class="form-select form-select-sm" style="width:auto;">
           <option value="all">All</option>
           <option value="unsolved">Unsolved</option>
           <option value="solved">Solved</option>
+          <option value="rating">Rating Only</option>
+          <option value="topic">Topic Only</option>
         </select>
         <button class="btn btn-sm btn-success glow-hover" id="addProblemUnifiedBtn">Add Problem</button>
       </div>
     </div>
-    <div id="ratingProblemsContainer" class="accordion"></div>
-    <div id="topicProblemsContainer" class="accordion d-none"></div>
+    <div id="unifiedProblemsContainer" class="accordion"></div>
   </section>
 
   <!-- Study Topics -->
