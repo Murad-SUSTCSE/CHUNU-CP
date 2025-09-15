@@ -973,6 +973,16 @@
   closeBtn.addEventListener('click', ()=> closeSideMenu());
   backdrop.addEventListener('click', ()=> closeSideMenu());
   document.addEventListener('keydown', e=>{ if(e.key==='Escape' && sideMenu.classList.contains('open')) closeSideMenu(); });
+  // Robust delegated handler for menu links
+  sideMenu.addEventListener('click', (e)=>{
+    const link = e.target.closest('a.menu-link[data-section]');
+    if(link){
+      e.preventDefault();
+      const sec = link.getAttribute('data-section');
+      if(sec) showSection(sec);
+      closeSideMenu();
+    }
+  });
 })();
 
 /* Mini TOC behavior */

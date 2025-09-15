@@ -32,7 +32,12 @@ small, .small { font-size: .8rem; line-height:1.3; }
 /* Unified translucent inputs */
 input, select, textarea { color:#ffffff !important; background:rgba(255,255,255,.07) !important; border:1px solid rgba(255,255,255,.18) !important; backdrop-filter:blur(6px); }
 input::placeholder, textarea::placeholder { color:#b9d2e4 !important; opacity:1; }
-select option { color:#0d1b28; background:#ffffff; }
+/* Force consistent dark-themed dropdown options (browser support varies) */
+select option { color:#e6f3ff; background:#0c2238; }
+select optgroup { background:#0c2238; color:#ffffff; }
+/* Remove default OS appearance where possible */
+select, .form-select { appearance:none; -webkit-appearance:none; -moz-appearance:none; }
+select.form-select { background-image:linear-gradient(135deg, rgba(255,255,255,.12), rgba(255,255,255,0)); }
 /* Table cells */
 table td, table th { color:#fff !important; }
 /* Buttons keep their original colors */
