@@ -46,8 +46,14 @@
     const solved= sr+st+su;
     const pct = total? Math.round(solved/total*100):0;
     byId('overallSummary').textContent = `${solved}/${total} solved (${pct}%)`;
-    byId('dashRatingCounts').textContent=`${sr}/${state.nextMonthRating.length} solved`;
-  const dashTopic = byId('dashTopicCounts'); if(dashTopic) dashTopic.textContent = `${st}/${state.nextMonthTopic.length} solved`;
+    const ratingTotal = state.nextMonthRating.length;
+    const topicTotal = state.nextMonthTopic.length;
+    const ratingPct = ratingTotal? Math.round(sr/ratingTotal*100):0;
+    const topicPct = topicTotal? Math.round(st/topicTotal*100):0;
+    const newSumEl = byId('dashNewProblemsSummary');
+    if(newSumEl){
+      newSumEl.innerHTML = `Rating: <span class='badge bg-secondary'>${sr}/${ratingTotal}</span> <span class='badge ${ratingPct===100 && ratingTotal?"badge-solved":"badge-unsolved"}'>${ratingPct}%</span> | Topic: <span class='badge bg-secondary'>${st}/${topicTotal}</span> <span class='badge ${topicPct===100 && topicTotal?"badge-solved":"badge-unsolved"}'>${topicPct}%</span>`;
+    }
     const dashUps = byId('dashUpsolveCounts'); if(dashUps) dashUps.textContent=`${su}/${state.upsolve.length} solved`;
     const topicsCompleted = state.topics4Weeks.filter(t=>t.status==='completed').length;
     const dash4 = byId('dash4WeekCounts'); if(dash4) dash4.textContent = `${topicsCompleted}/${state.topics4Weeks.length} completed`;
